@@ -31,7 +31,7 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 LATEX_DIR = BASE_DIR / "data" / "latex"
 TEMP_DIR = BASE_DIR / "temp"
 TEMP_LATEX_DIR = TEMP_DIR / "latex"
-IMAGE_RENDER_DPI = 300
+IMAGE_RENDER_DPI = 180
 IMAGE_MARGIN_CM = 0.9
 IMAGE_TEX_BODY_PLACEHOLDER = "__LATEX_IMAGE_BODY__"
 LATEX_ACTIONS_TEXT = "list/base/edit/create/copy/delete/image/settings/output/install"
@@ -51,7 +51,7 @@ DEFAULT_TEX = "\n".join(
 IMAGE_TEX_TEMPLATE = "\n".join(
     [
         "\\RequirePackage{plautopatch}",
-        "\\documentclass[a4paper]{ltjsarticle}",
+        "\\documentclass[preview,border=3pt]{ltjsarticle}",
         "\\usepackage{tcolorbox,mathcomp,tcolorbox,amsmath,mathtools,amssymb,graphicx,ascmac,fancybox,framed,tikz,comment,calc,enumitem}",
         "\\tcbuselibrary{breakable, skins, theorems}",
         "\\usetikzlibrary{positioning, intersections, calc, arrows.meta,math}",
@@ -1199,7 +1199,11 @@ class Latex(commands.Cog):
         return True, lua_text
 
     def _render_pdf_to_image(self, pdf_path: Path, output_path: Path) -> Path:
-        pages = convert_from_path(str(pdf_path), dpi=IMAGE_RENDER_DPI)
+        pages = convert_from_path(
+            str(pdf_path),
+            dpi=IMAGE_RENDER_DPI,
+            timeout=20,
+        )
         if not pages:
             raise RuntimeError("PDF から画像を生成できませんでした")
 
@@ -1327,7 +1331,14 @@ class Latex(commands.Cog):
             )
         except FileNotFoundError:
             return False, "lualatex が見つかりません"
-        lua_stdout, _ = await lua_command.communicate()
+        try:
+            lua_stdout, _ = await asyncio.wait_for(
+                lua_command.communicate(),
+                timeout=25,
+            )
+        except asyncio.TimeoutError:
+            lua_command.kill()
+            return False, "LuaLaTeXの実行がタイムアウトしました"
         lua_text = lua_stdout.decode("utf-8", errors="replace")
         if lua_command.returncode != 0:
             return False, lua_text
