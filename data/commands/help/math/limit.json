@@ -1,0 +1,25 @@
+{
+  "title": "limit",
+  "description": "極限値を計算します",
+  "fields": [
+    {
+      "label": "使い方",
+      "value": "c!limit $式$ <変数> 向かう先"
+    },
+    {
+      "label": "短縮形",
+      "value": "c!lim"
+    },
+    {
+      "label": "注意",
+      "value": "無限はInfで記述する必要有\n向かう先のあとに向かう方向+,-の記述が必須"
+    },
+    {
+      "label": "例",
+      "value": [
+        "c!limit $\\frac{x^2-1}{x-1}$ x 1+$\n出力:2",
+        "c!lim $\\frac{x^2}{1+2x^2}}$ x inf\n出力:1/2"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "title": "integrate",
+  "description": "式の不定積分, 定積分を求めます",
+  "fields": [
+    {
+      "label": "使い方",
+      "value": "c!integrate $式$ ＜変数＞ [下端(省略可)] [上端(省略可)]"
+    },
+    {
+      "label": "短縮形",
+      "value": "c!int"
+    },
+    {
+      "label": "例",
+      "value": [
+        "c!integrate $x^2-1$ x\n出力:x^3/3 - x + C",
+        "c!int $0$ x\n出力:0 + C",
+        "c!int $x^2$ x 0 1\n出力:1/3"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "title": "Help - Page 2",
+  "description": "数学用コマンド一覧",
+  "fields": [
+    {
+      "label": "c!calc",
+      "value": "数式を計算します"
+    },
+    {
+      "label": "c!solve",
+      "value": "方程式を解きます"
+    },
+    {
+      "label": "c!diff",
+      "value": "式の導関数を求めます"
+    },
+    {
+      "label": "c!integrate",
+      "value": "式の不定積分,定積分を求めます"
+    },
+    {
+      "label": "c!factor",
+      "value": "自然数を素因数分解します"
+    },
+    {
+      "label": "c!limit",
+      "value": "極限値を計算します"
+    },
+    {
+      "label": "c!graph",
+      "value": "グラフを描画します"
+    },
+    {
+      "label": "c!sequence",
+      "value": "数列の一般項を計算します"
+    },
+    {
+      "label": "c!value",
+      "value": "具体的な数値を計算します"
+    }
+  ]
+}
+
+
+

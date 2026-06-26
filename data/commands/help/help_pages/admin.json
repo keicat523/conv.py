@@ -1,0 +1,22 @@
+{
+  "title": "Help - Admin",
+  "description": "管理者コマンド一覧",
+  "fields": [
+    {
+      "label": "c!reload",
+      "value": "cogを再読み込みします"
+    },
+    {
+      "label": "c!info",
+      "value": "botの状態を表示、変更します"
+    },
+    {
+      "label": "c!memo",
+      "value": "ユーザーの管理者メモを追加、変更します"
+    },
+    {
+      "label": "c!limtime",
+      "value": "botの実行可能最大時間を変更します"
+    }
+  ]
+}

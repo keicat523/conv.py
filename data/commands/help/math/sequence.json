@@ -1,0 +1,21 @@
+{
+  "title": "sequence",
+  "description": "数列の一般項を計算します",
+  "fields": [
+    {
+      "label": "使い方",
+      "value": "c!sequence $数式$"
+    },
+    {
+      "label": "短縮形",
+      "value": "c!seq"
+    },
+    {
+      "label": "例",
+      "value": [
+        "c!seq $a_1=1,a_{n+1}=3a_n+2$\n出力:a(n)=2*3^(n - 1) - 1",
+        "c!seq $a_1=1,a_2=2,a_{n+1}=a_n+2a_{n-1}$\n出力:a(n)=2^(n - 1)"
+      ]
+    }
+  ]
+}

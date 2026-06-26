@@ -1,0 +1,10 @@
+{
+  "title": "reload",
+  "description": "cogを再読み込みします(管理者限定)",
+  "fields": [
+    {
+      "label": "使い方",
+      "value": "c!reload <cog名>"
+    }
+  ]
+}

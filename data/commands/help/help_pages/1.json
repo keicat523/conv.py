@@ -1,0 +1,26 @@
+{
+  "title": "Help - Page 1",
+  "description": "基本コマンド一覧",
+  "fields": [
+    {
+      "label": "c!setprefix",
+      "value": "コマンドのprefixを設定します"
+    },    
+    {
+      "label": "c!help",
+      "value": "helpを表示します"
+    },
+    {
+      "label": "c!ping",
+      "value": "pingを表示します"
+    },
+    {
+      "label": "c!user_info",
+      "value": "ユーザーの情報を確認出来ます"
+    },
+    {
+      "label": "c!inventory",
+      "value": "ユーザーの所持品を確認できます"
+    }
+  ]
+}

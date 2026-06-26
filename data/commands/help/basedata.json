@@ -1,0 +1,24 @@
+{
+  "title": "n",
+  "description": "d",
+  "fields": [
+    {
+      "label": "使い方",
+      "value": "c!n"
+    },
+    {
+      "label": "短縮形",
+      "value": "あれば"
+    },
+    {
+      "label": "注意",
+      "value": "あれば"
+    },
+    {
+      "label": "例",
+      "value": [
+        "c!コマンド \n出力:例"
+      ]
+    }
+  ]
+}

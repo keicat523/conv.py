@@ -1,0 +1,25 @@
+{
+  "title": "factor",
+  "description": "自然数を素因数分解します",
+  "fields": [
+    {
+      "label": "使い方",
+      "value": "c!factor $$"
+    },
+    {
+      "label": "短縮形",
+      "value": "c!pf"
+    },
+    {
+      "label": "注意",
+      "value": "実行時間が長すぎる場合出力されません"
+    },
+    {
+      "label": "例",
+      "value": [
+        "c!factor 6\n出力:6 = 2×3",
+        "c!pf 33550336\n出力:33550336 = 2^12 × 8191"
+      ]
+    }
+  ]
+}

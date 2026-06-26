@@ -1,0 +1,20 @@
+{
+  "title": "graph",
+  "description": "グラフを描画します",
+  "fields": [
+    {
+      "label": "使い方",
+      "value": "c!graph $式$ [描画範囲]"
+    },
+    {
+      "label": "注意",
+      "value": "式は{A,B}でA∧B, {A},{B}でA∨Bを描画します。\n不等式も一応対応済"
+    },
+    {
+      "label": "例",
+      "value": [
+        "c!graph ${y=x,y<x^2,y>2x^2-1},{y^2>x^2}$\n出力:略"
+      ]
+    }
+  ]
+}

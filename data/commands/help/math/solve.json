@@ -1,0 +1,22 @@
+{
+  "title": "solve",
+  "description": "等式を解きます",
+  "fields": [
+    {
+      "label": "使い方",
+      "value": "c!solve $等式$ ＜変数＞"
+    },
+    {
+      "label": "注意",
+      "value": "厳密解が求められない場合は数値解を返します"
+    },
+    {
+      "label": "例",
+      "value": [
+        "c!solve $x^2+2x+1=0$ x\n出力:x = -1",
+        "c!solve $x^2-2=0$ x\n出力:x = -sqrt(2), sqrt(2)",
+        "!solve $x^3-1=0$ x\n出力:x = 1, -1/2 - sqrt(3)*I/2, -1/2 + sqrt(3)*I/2"
+      ]
+    }
+  ]
+}

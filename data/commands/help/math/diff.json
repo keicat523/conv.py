@@ -1,0 +1,17 @@
+{
+  "title": "diff",
+  "description": "式の導関数,もしくは微分係数を求めます",
+  "fields": [
+    {
+      "label": "使い方",
+      "value": "c!diff $式$ ＜変数＞ [値]"
+    },
+    {
+      "label": "例",
+      "value": [
+        "c!diff $x^4-x^2$ x\n出力:4x^3-2x",
+        "c!diff $x^4-x^2$ x 2\n出力:28"
+      ]
+    }
+  ]
+}

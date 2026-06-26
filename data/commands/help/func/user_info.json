@@ -1,0 +1,18 @@
+{
+  "title": "user_data",
+  "description": "ユーザー情報を表示します",
+  "fields": [
+    {
+      "label": "使い方",
+      "value": "c!user_data [@mention (省略可)]"
+    },
+    {
+      "label": "表示内容",
+      "value": [
+        "ユーザー名",
+        "ユーザーID",
+        "設定されている prefix"
+      ]
+    }
+  ]
+}

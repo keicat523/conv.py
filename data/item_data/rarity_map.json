@@ -1,0 +1,6 @@
+{
+  "n": "normal_item.json",
+  "r": "rare_item.json",  
+  "e": "epic_item.json",
+  "l": "legendary_item.json"
+}

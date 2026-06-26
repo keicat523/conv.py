@@ -1,0 +1,14 @@
+{
+  "title": "setprefix",
+  "description": "コマンドのprefixを変更します",
+  "fields": [
+    {
+      "label": "使い方",
+      "value": "c!setprefix <prefix>"
+    },
+    {
+      "label": "注意",
+      "value": "5文字以上のprefixには変更できません。"
+    }
+  ]
+}
