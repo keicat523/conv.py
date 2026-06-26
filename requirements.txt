@@ -2,3 +2,4 @@ discord.py
 pdf2image
 Pillow
 sympy
+python-dotenv
