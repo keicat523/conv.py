@@ -31,7 +31,7 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 LATEX_DIR = BASE_DIR / "data" / "latex"
 TEMP_DIR = BASE_DIR / "temp"
 TEMP_LATEX_DIR = TEMP_DIR / "latex"
-IMAGE_RENDER_DPI = 180
+IMAGE_RENDER_DPI = 100
 IMAGE_MARGIN_CM = 0.9
 IMAGE_TEX_BODY_PLACEHOLDER = "__LATEX_IMAGE_BODY__"
 LATEX_ACTIONS_TEXT = "list/base/edit/create/copy/delete/image/settings/output/install"
@@ -1202,6 +1202,9 @@ class Latex(commands.Cog):
         pages = convert_from_path(
             str(pdf_path),
             dpi=IMAGE_RENDER_DPI,
+            first_page=1,
+            last_page=1,
+            single_file=True,
             timeout=20,
         )
         if not pages:
