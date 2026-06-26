@@ -1,0 +1,60 @@
+\documentclass[a4paper]{ltjsarticle}
+\input{pre/preamble.tex}
+
+% ----[設定]----------------------------
+    % setting.texから設定を調整すること
+    \input{setting.tex}
+
+
+% ----[ここから本文]---------------------
+\begin{document}
+
+% ----[表紙]----------------------------
+\input{pre/display.tex}
+
+
+% 本文用設定に変更、文字サイズエラーは無視
+\newgeometry{left=15truemm,right=20truemm,top=20truemm}\fontsize{14truept}{14truept}\selectfont
+
+\white\white\newgeometry{left=20truemm,right=20truemm,top=30truemm}\noindent
+\scalebox{2}{\fbox{1}}　\;(20点)
+\\[5mm]\indent
+　$a$，$b$を実数とする．$2$曲線$C_1$，$C_2$を$C_1:y=(x-1)^2-1$，$C_2:y=ax^3-bx$\\[2mm]
+　と定めたところ，これらの曲線は$x=0$以外に共有点を持たなかった．\\[2mm]
+　このとき$b-a$の取りうる値の範囲を求めよ．
+
+
+\newpage\noindent\scalebox{2}{\fbox{2}}　($20$点)\\[5mm]\indent
+　自然数$n$に対して数列$\{F_n\}$を
+\[F_n=2^{2^{n-1}}+1\]
+　と定める．\\[5mm]
+\begin{enumerate}
+\item[(1)]　$F_1F_2\dots F_n$を$F_{n+1}$を用いて表わせ．
+\item[(2)]　$i$，$j$を自然数とする．$F_iF_j$がある整数の$2$乗で表せることと，$i=j$であ
+\item[]ることは同値であることを示せ．
+\end{enumerate}
+
+
+\newpage\noindent\scalebox{2}{\fbox{3}}　($20$点)\\[5mm]\indent
+　数列$\{x_n\}$，$\{y_n\}$は
+\[x_1=1,　y_1=3,　x_{n+1}=\{x_n-y_n\}^2,　y_{n+1}=4x_ny_n\]
+　を満たしている．\\[5mm]
+\begin{enumerate}
+\item[(1)]　$x_n+y_n$を$n$を用いて表わせ．
+\item[(2)]　$x_n$，$y_n$の一般項を求めよ．
+\item[(3)]　$x_m>10^{2026}$を満たす最小の自然数$m$を求めよ．
+\end{enumerate}
+
+\newpage\noindent\scalebox{2}{\fbox{4}}　($20$点)\\[5mm]\indent
+　AB$=6$，AC$=8$，BC$=a$を満たす$\triangle$ABCにおいてACの中点をD，$\angle$BDCの\\[3mm]
+　二等分線とBCの交点をEとする．\\[5mm]
+
+\begin{enumerate}
+\item[(1)]　BDの長さを$a$を用いて表わせ
+\item[(2)]　$a\mathrm{BE}-k\mathrm{\,BD}^2$が$a=\sqrt{14}$で最小を取るような実数$k$の値を求めよ．
+\end{enumerate}
+
+\vfill\rightline{{\LARGE 問題は以上である\w}}\leavevmode\\[6mm]
+\white\white
+
+\end{document}

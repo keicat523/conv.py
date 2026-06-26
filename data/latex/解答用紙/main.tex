@@ -1,0 +1,151 @@
+\RequirePackage{plautopatch}
+\documentclass[a4paper]{ltjsarticle}
+\usepackage{tcolorbox,amsmath,amssymb,graphicx,ascmac,fancybox,framed,tikz,comment,calc}
+\tcbuselibrary{breakable, skins, theorems}
+\usetikzlibrary{positioning, intersections, calc, arrows.meta,math}
+\usepackage[top=20truemm,left=15truemm,right=15truemm,bottom=16truemm]{geometry}
+%
+% \white :計算用余白の挟み込み
+\newcommand{\white}{\newpage\leavevmode
+\begin{center}
+    \noindent(計算用余白)
+\end{center}}
+% \exc[サイズ]{数値} :a\exc{b}でa^b, 指数に指数を載せる時に使用　数式環境内ではサイズ0.95
+\newcommand{\exc}[2][0.75]{^{\textstyle\scalebox{#1}[#1]{\raise0.25ex\hbox{$#2$}}}}
+% \exfrac[サイズ]{分母}{分子} :指数部分に分数を持ってくるときに使う．積分範囲などに使う場合サイズ0.75~0.8を推奨
+\newcommand{\exfrac}[3][0.90]{\tfrac{\lower0.1ex\hbox{\scalebox{#1}[#1]{$#2$}}}{\raise0.3ex\scalebox{#1}[#1]{$#3$\rule{0pt}{7.5pt}}}}
+% \dint[文字サイズ]{下付}{上付} :インテグラルのdisplay省略、積分範囲の表示サイズを変更、
+\newcommand{\dint}[3][0.75]{\displaystyle\int_{\scalebox{#1}[#1]{$#2$}}^{\scalebox{#1}[#1]{$#3$}}}
+% \dsqrt[n乗根]{中身}　:√を重ねる時用
+\newcommand{\dsqrt}[2][]{\displaystyle\sqrt[\raise0ex\hbox{{\scalebox{0.625}[0.625]{$#1$}}}]{#2}}
+% \dlim{下に付けるヤツ} :文字サイズ変更に適用させたlim
+\newcommand{\dlim}[1]{\raise0.3ex\hbox{\scalebox{1.04}{${\normalsize \displaystyle\lim_{#1}}$}}\,}
+% \cmb{n}{r}  \prm{n}{r}　: nCr nPr
+\def\cmb#1#2{_{#1}\mathrm{C}_{#2}}\def\prm#1#2{_{#1}\mathrm{P}_{#2}}
+% \w :(n)の後の空白用
+\def\w{\;\;\;}\def\spw{\;\;\,\,}
+% \hs \vs \vhs  :未使用
+\def\hs{\hspace{1.38cm}}\def\vs{\vspace{-2mm}\\[1mm]}\def\vhs{\vs\hs}
+\def\mrm{\mathrm}
+\def\ve{\overrightarrow}
+\def\linera{\\[-0.4mm]｜\\[-0.5mm]｜}
+\def\linerb{\linera\linera}
+\def\linerc{\linerb\linerb}
+\def\linerd{\linerc\linerc}
+\def\linere{\linerd\linerd\linerc\linerb}
+
+% 表紙のページ番号を省略
+\pagestyle{empty}
+
+\begin{document}
+\fontsize{14truept}{14truept}\selectfont\noindent
+
+
+% p1
+\noindent
+模\;擬\;試\;験\spw 数\;学\spw 解\;答\;用\;紙 \spw(\;1\;枚\,目\;表\;)\\[1mm]
+{\small 解答は枠内に収めること．\scalebox{1.1}{\fbox{2}}\,の解答欄は裏面にある．}
+\begin{framed}\noindent
+    \scalebox{1.5}{\fbox{1}}\begin{center}
+        ｜ \linere\
+    \end{center}
+\end{framed}\leavevmode\\[-10mm]
+\,\underbar{　\hspace{17cm}　}\\[2mm]
+\noindent
+$\raise2.75ex\hbox{\scalebox{0.8}{
+    \begin{tabular}{|l|r|} \hline
+    \;\;{\small フリガナ} & \hspace{5cm} \\ \hline
+    \lower1ex\hbox{　\hspace{-0.1cm}}{\large 氏\; 名}\raise1ex\hbox{　\hspace{-0.1cm}}& \hspace{9cm} \\ \hline 
+        \end{tabular}}}$
+\hfill $\raise1.2ex\hbox{{\HUGE \fbox{　\hspace{-0.9cm} {\raise0.4ex\hbox{\large 採\,点}}　\hspace{-0.595cm}}\fbox{　{\small /}　}}}$
+
+
+% p2
+\newpage\noindent
+$模\;擬\;試\;験\spw 数\;学\spw 解\;答\;用\;紙 \spw(\;1\;枚\,目\;裏\;)$ \\[2mm]
+{\small 解答は枠内に収めること．}
+\begin{framed}\noindent
+    \scalebox{1.5}{\fbox{2}}\begin{center}
+        ｜ \linere\
+    \end{center}
+\end{framed}\leavevmode\\[-10mm]
+\,\underbar{　\hspace{17cm}　}\\[2mm]
+\noindent
+\hfill $\raise1.2ex\hbox{{\HUGE \fbox{　\hspace{-0.9cm} {\raise0.4ex\hbox{\large 採\,点}}　\hspace{-0.595cm}}\fbox{　{\small /}　}}}$
+
+% p3
+\newpage\noindent
+$模\;擬\;試\;験\spw 数\;学\spw 解\;答\;用\;紙 \spw(\;2\;枚\,目\;表\;)$\\[1mm]
+{\small 解答は枠内に収めること．\scalebox{1.1}{\fbox{4}}\,の解答欄は裏面にある．}
+\begin{framed}\noindent
+    \scalebox{1.5}{\fbox{3}}\begin{center}
+        ｜ \linere\
+    \end{center}
+\end{framed}\leavevmode\\[-10mm]
+\,\underbar{　\hspace{17cm}　}\\[2mm]
+\noindent
+$\raise2.75ex\hbox{\scalebox{0.8}{
+    \begin{tabular}{|l|r|} \hline
+    \;\;{\small フリガナ} & \hspace{5cm} \\ \hline
+    \lower1ex\hbox{　\hspace{-0.1cm}}{\large 氏\; 名}\raise1ex\hbox{　\hspace{-0.1cm}}& \hspace{9cm} \\ \hline 
+        \end{tabular}}}$
+\hfill $\raise1.2ex\hbox{{\HUGE \fbox{　\hspace{-0.9cm} {\raise0.4ex\hbox{\large 採\,点}}　\hspace{-0.595cm}}\fbox{　{\small /}　}}}$
+
+
+
+
+
+% p4
+\newpage\noindent
+$模\;擬\;試\;験\spw 数\;学\spw 解\;答\;用\;紙 \spw(\;2\;枚\,目\;裏\;)$ \\[2mm]
+{\small 解答は枠内に収めること．}
+\begin{framed}\noindent
+    \scalebox{1.5}{\fbox{4}}\begin{center}
+        ｜ \linere\
+    \end{center}
+\end{framed}\leavevmode\\[-10mm]
+\,\underbar{　\hspace{17cm}　}\\[2mm]
+\noindent
+\hfill $\raise1.2ex\hbox{{\HUGE \fbox{　\hspace{-0.9cm} {\raise0.4ex\hbox{\large 採\,点}}　\hspace{-0.595cm}}\fbox{　{\small /}　}}}$
+
+
+% p5
+\newpage\noindent
+$模\;擬\;試\;験\spw 数\;学\spw 解\;答\;用\;紙 \spw(\;3\;枚\,目\;表\;)　$\\[1mm]
+{\small 解答は枠内に収めること．\scalebox{1.1}{\fbox{6}}\,の解答欄は裏面にある．}
+\begin{framed}\noindent
+    \scalebox{1.5}{\fbox{5}}\begin{center}
+        ｜ \linere\
+    \end{center}
+\end{framed}\leavevmode\\[-10mm]
+\,\underbar{　\hspace{17cm}　}\\[2mm]
+\noindent
+$\raise2.75ex\hbox{\scalebox{0.8}{
+    \begin{tabular}{|l|r|} \hline
+    \;\;{\small フリガナ} & \hspace{5cm} \\ \hline
+    \lower1ex\hbox{　\hspace{-0.1cm}}{\large 氏\; 名}\raise1ex\hbox{　\hspace{-0.1cm}}& \hspace{9cm} \\ \hline 
+        \end{tabular}}}$
+\hfill $\raise1.2ex\hbox{{\HUGE \fbox{　\hspace{-0.9cm} {\raise0.4ex\hbox{\large 採\,点}}　\hspace{-0.595cm}}\fbox{　{\small /}　}}}$
+
+%
+
+% p6
+\newpage\noindent
+$模\;擬\;試\;験\spw 数\;学\spw 解\;答\;用\;紙 \spw(\;3\;枚\,目\;裏\;)$ \\[2mm]
+{\small 解答は枠内に収めること．}
+\begin{framed}\noindent
+    \scalebox{1.5}{\fbox{6}}\begin{center}
+        ｜ \linere\
+    \end{center}
+\end{framed}\leavevmode\\[-10mm]
+\,\underbar{　\hspace{17cm}　}\\[2mm]
+\noindent
+\hfill $\raise1.2ex\hbox{{\HUGE \fbox{　\hspace{-0.9cm} {\raise0.4ex\hbox{\large 採\,点}}　\hspace{-0.595cm}}\fbox{　{\small /}　}}}$
+%
+
+
+
+%
+%
+%
+\end{document}

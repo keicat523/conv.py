@@ -1,0 +1,42 @@
+\fontsize{11truept}{11truept}\selectfont
+\setlist{parsep=0ex, itemsep=1ex, leftmargin=1.5cm}
+\thispagestyle{empty}
+    % 受験番号タイトル設定日付
+    \begin{center}
+        % 氏名
+        \leavevmode\hfill\scalebox{0.8}{
+        \begin{tabular}{|l|r|} \hline
+            % LuaLaTeXする前だけどなんか真ん中持ってけないからごり押し
+            % 今度資料集めてきて形式直す、受験番号2行かもみんあ
+            \lower1.5ex\hbox{　\hspace{-0.25cm}}{\large 受\;験\;番\;号}\raise1.5ex\hbox{　\hspace{-0.25cm}} & \hspace{6cm} \\ \hline
+        \end{tabular}}\leavevmode\\[0mm]\vspace{-0.05cm}　\hfill\scalebox{0.8}{
+        \begin{tabular}{|l|r|} \hline
+            \lower1.5ex\hbox{　\hspace{-0.15cm}}{\large 氏\;名}\raise1.5ex\hbox{　\hspace{-0.15cm}} & \hspace{6.814cm} \\ \hline
+        \end{tabular}}\\[15mm]
+        \scalebox{1.4}{ ${{\setBold[0.01]\condyear\;年度　\condmonth\;月実施　模擬試験\unsetBold}}$ }
+        \\[7mm]
+        　　　　\scalebox{1.3}{{\Huge $数\spw \spw \spw 学$}}　　　
+        \\[2mm]
+        {\large 　(\;\examtime\;分　　\maxscore\;点\;)}
+    \end{center}
+　\\[15mm]
+    \hfill \scalebox{1.5}{{\Large  令和\;$\exey$\;年　\;$\exem$\;月\;$\exed$\;日\;(\exew)}}
+　\\[2mm]
+    \begin{framed}
+        {\large 付属の解答用紙を使用する際は指定された枠に問題の解答を記述し提出すること．使用しな}\\[1.5mm]
+        {\large い場合はA4，もしくはB5サイズの白紙に解答を問題番号及び小問番号等すべてが明確にわか}\\[1.5mm]
+        {\large るように記述し提出すること．}
+        　\\[-3mm]
+    \end{framed}
+\leavevmode\\[2mm]
+    % 注意事項
+        \leavevmode
+        \centerline{{\Large 　\;\;$\textgt{{\mdseries 注　意　事　項}}$\;\;　}}
+        \\[0mm]
+        \fontsize{12}{12}\selectfont
+\begin{enumerate}[parsep=0ex, itemsep=1.5ex, leftmargin=0.6cm]
+\input{pre/precautions/\precaution.tex}
+\end{enumerate}
+
+
+\vfill

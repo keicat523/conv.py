@@ -1,0 +1,31 @@
+\usepackage{xfakebold,tcolorbox,amsmath,amssymb,graphicx,ascmac,fancybox,framed,tikz,comment,calc,amsthm,bm,enumitem}
+\tcbuselibrary{breakable, skins, theorems}
+\usetikzlibrary{positioning, intersections, calc, arrows.meta,math}
+\usepackage[top=11truemm,left=20truemm,right=15truemm,bottom=23truemm]{geometry}
+\usepackage{luatexja-fontspec,setspace,xfakebold}
+\setsansjfont[Script={}]{Sawarabi Gothic}
+\setsansfont[Script={}]{Sawarabi Gothic}
+\def\n#1{\scalebox{0.9}[1]{$#1$}}
+
+
+\newcommand{\pro}[2]{\item[\scalebox{1.42}{{\sffamily \setlength{\fboxrule}{1pt}\setlength{\fboxsep}{0.3em}{\fbox{\hspace{0.09em}\scalebox{0.8}[0.85]{{\Large #1}}\hspace{0.09em}}}}}]　\hfill(#2\;点)\vspace{0truemm}}
+
+% \cmb{n}{r}  \prm{n}{r}　: nCr nPr
+\def\cmb#1#2{_{#1}\mathrm{C}_{#2}}\def\prm#1#2{_{#1}\mathrm{P}_{#2}}
+% \hs \vs \vhs  :未使用
+\def\hs{\hspace{1.38cm}}\def\vs{\vspace{-2mm}\\[1mm]}\def\vhs{\vs\hs}
+\def\mrm{\mathrm}
+\def\ve{\overrightarrow}
+\def\spw{\;\;\;}
+% 表紙のページ番号を省略
+\setcounter{page}{0}
+% ページ番号の設定
+\makeatletter
+\renewcommand{\@oddfoot}{\hfil---\;\;\n{\thepage}\;\;---\hfil}
+\renewcommand{\@evenfoot}{\hfill ---\;\;\n{\thepage}\;\;---\hfill}
+\makeatother
+\ltjsetparameter{
+kanjiskip=0pt plus 0pt minus 0pt
+}
+
+\setstretch{1.45}
