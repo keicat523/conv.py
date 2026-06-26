@@ -13,6 +13,8 @@ from utils.ignore_mode import is_ignore_enabled
 from utils.pretty import to_sympy_input
 from utils.prefix_manager import load_prefix
 from utils.timeout_manager import get_timeout_seconds
+from flask import Flask
+import threading
 
 # Bot基本設定 
 intents = discord.Intents.default()
@@ -300,6 +302,17 @@ async def on_command_error(ctx, error):
 if __name__ == "__main__":
     while True:
         try:
+            app = Flask(__name__)
+            @app.route("/")
+            def home():
+                return "Bot is running"
+            
+            def run_web():
+                port = int(os.environ.get("PORT", 10000))
+                app.run(host="0.0.0.0", port=port)
+            
+            threading.Thread(target=run_web, daemon=True).start()
+            
             bot.run(TOKEN)
             break
         except AttributeError as exc:
