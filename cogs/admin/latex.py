@@ -1198,40 +1198,48 @@ class Latex(commands.Cog):
             return False, f"{stem}.pdf が生成されませんでした"
         return True, lua_text
 
-    def _render_pdf_to_image(self, pdf_path: Path, output_path: Path) -> Path:
-        pages = convert_from_path(
+    async def _render_pdf_to_image(self, pdf_path: Path, output_path: Path) -> Path:
+        temp_base = output_path.with_suffix("")
+    
+        proc = await asyncio.create_subprocess_exec(
+            "pdftoppm",
+            "-png",
+            "-gray",
+            "-singlefile",
+            "-r",
+            "80",
             str(pdf_path),
-            dpi=80,
-            first_page=1,
-            last_page=1,
-            grayscale=True,
-            single_file=True,
-            thread_count=1,
-            timeout=10,
+            str(temp_base),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
         )
-        if not pages:
+    
+        _, stderr = await proc.communicate()
+    
+        if proc.returncode != 0:
+            raise RuntimeError(
+                stderr.decode("utf-8", errors="ignore")
+            )
+    
+        generated_path = temp_base.with_suffix(".png")
+    
+        if not generated_path.exists():
             raise RuntimeError("PDF から画像を生成できませんでした")
-
-        margin_px = round((IMAGE_MARGIN_CM / 2.54) * IMAGE_RENDER_DPI)
-        cropped_pages = [cropped for page in pages if (cropped := self._crop_content(page)) is not None]
-        if not cropped_pages:
+    
+        page = Image.open(generated_path)
+    
+        cropped = self._crop_content(page)
+        if cropped is None:
             raise RuntimeError("PDFに画像化できる本文がありません")
-
-        if len(cropped_pages) == 1:
-            canvas = self._add_margin(cropped_pages[0], margin_px) if margin_px > 0 else cropped_pages[0]
-        else:
-            gap = max(20, margin_px // 2) if margin_px > 0 else 0
-            width = max(image.width for image in cropped_pages)
-            height = sum(image.height for image in cropped_pages) + gap * (len(cropped_pages) - 1)
-            merged = Image.new("L", (width, height), "white")
-            y = 0
-            for image in cropped_pages:
-                x = (width - image.width) // 2
-                merged.paste(image, (x, y))
-                y += image.height + gap
-            canvas = self._add_margin(merged, margin_px) if margin_px > 0 else merged
-
+    
+        margin_px = round((IMAGE_MARGIN_CM / 2.54) * IMAGE_RENDER_DPI)
+        canvas = self._add_margin(cropped, margin_px) if margin_px > 0 else cropped
+    
         canvas.save(output_path, optimize=True)
+    
+        if generated_path.exists():
+            generated_path.unlink()
+    
         return output_path
 
     def _crop_content(self, image: Image.Image) -> Image.Image | None:
