@@ -1244,28 +1244,39 @@ class Latex(commands.Cog):
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
     <style>
-    .math-line {{
-    display: block;
-    }}
-    body {{
-        background: white;
+    body {
+        margin: 0;
         padding: 20px;
-        font-size: 32px;
+        background: white;
         width: fit-content;
+        height: fit-content;
+        font-size: 32px;
         font-family:
             "Noto Sans CJK JP",
             "Noto Serif CJK JP",
             "IPAexGothic",
             "IPAGothic",
             sans-serif;
-    }}
-    #math {{
-        display: inline-flex;
-    }}
-    mjx-container {{
+    }
+    
+    #math {
+        display: inline-block;
+        width: fit-content;
+        line-height: 1.6;
+    }
+    
+    br {
+        display: block;
+        content: "";
+        margin-top: 0.35em;
+    }
+    
+    mjx-container {
+        display: inline !important;
+        width: auto !important;
+        margin: 0 !important;
         font-size: 120% !important;
-        width:auto;
-    }}
+    }
     </style>
     </head>
     <body>
