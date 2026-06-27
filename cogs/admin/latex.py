@@ -1347,7 +1347,7 @@ class Latex(commands.Cog):
       }}
     }};
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
     
     <style>
     body {{
@@ -1434,13 +1434,8 @@ class Latex(commands.Cog):
     
     /* MathJax */
     mjx-container {{
-        width: auto !important;
-        margin: 0 !important;
-        font-size: 90% !important;
         font-weight: normal !important;
-    }}
-    mjx-container svg {{
-        stroke-width: 0 !important;
+        letter-spacing: 0 !important;
     }}
 
     
