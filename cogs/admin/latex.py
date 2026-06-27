@@ -1170,14 +1170,33 @@ class Latex(commands.Cog):
             )
         except FileNotFoundError:
             return False, "lualatex が見つかりません"
-                            
+                                
     def _convert_latex_breaks(self, text: str) -> str:
-        # display math保護
+        display_blocks = []
+    
+        # \[...\] を全部退避
+        def save_display(m):
+            display_blocks.append(m.group(1))
+            return f"@@DISPLAY{len(display_blocks)-1}@@"
+    
         text = re.sub(
             r"\\\[(.*?)\\\]",
-            lambda m: f"@@DISPLAY@@{m.group(1)}@@ENDDISPLAY@@",
+            save_display,
             text,
             flags=re.S
+        )
+    
+        # \\[5mm] → 空白div
+        text = re.sub(
+            r"\\\\\[(.*?)\]",
+            lambda m: f"<div style='height:{m.group(1)};'></div>",
+            text
+        )
+    
+        # \quad / \qquad
+        text = text.replace(
+            r"\qquad",
+            "<span style='display:inline-block;width:2em'></span>"
         )
     
         text = text.replace(
@@ -1185,28 +1204,24 @@ class Latex(commands.Cog):
             "<span style='display:inline-block;width:1em'></span>"
         )
     
-        text = text.replace(
-            r"\qquad",
-            "<span style='display:inline-block;width:2em'></span>"
-        )
-    
+        # \hspace{...}
         text = re.sub(
             r"\\hspace\{(.*?)\}",
             lambda m: f"<span style='display:inline-block;width:{m.group(1)}'></span>",
             text
         )
     
+        # 普通の改行
         text = text.replace(r"\\", "<br>")
     
-        text = re.sub(
-            r"@@DISPLAY@@(.*?)@@ENDDISPLAY@@",
-            lambda m: f"<div class='display-math'>\\\\[{m.group(1)}\\\\]</div>",
-            text,
-            flags=re.S
-        )
+        # display math 復元
+        for i, content in enumerate(display_blocks):
+            text = text.replace(
+                f"@@DISPLAY{i}@@",
+                f"<div class='display-math'>\\[{content}\\]</div>"
+            )
     
         return text
-
     
     def _convert_enumerate(self, text: str) -> str:
         def repl(match):
