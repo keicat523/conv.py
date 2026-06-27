@@ -1177,6 +1177,7 @@ class Latex(commands.Cog):
         output_path: Path,
     ) -> Path:
         escaped_tex = html.escape(tex_body)
+        escaped_tex = escaped_tex.replace("\\\\", "<br>")
         html_content = f"""
     <!DOCTYPE html>
     <html>
