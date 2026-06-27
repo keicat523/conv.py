@@ -1283,7 +1283,7 @@ class Latex(commands.Cog):
         escaped_tex = escaped_tex.replace("&lt;/div&gt;", "</div>")
         escaped_tex = escaped_tex.replace("&lt;/span&gt;", "</span>")
         
-        await page.goto(f"file://{html_path.resolve()}")
+
 
         
         html_content = f"""
