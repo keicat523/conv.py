@@ -1384,7 +1384,8 @@ class Latex(commands.Cog):
     .enum-title {{
         flex: 0 0 auto;
         white-space: nowrap;
-        font-weight: bold;
+        font-weight: 500;
+        font-family: inherit;
     }}
     
     .enum-body {{
