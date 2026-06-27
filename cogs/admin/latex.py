@@ -1210,34 +1210,35 @@ class Latex(commands.Cog):
 
     
     def _convert_enumerate(self, text: str) -> str:
-        text = text.replace(r"\begin{enumerate}", "<dl>")
-        text = text.replace(r"\end{enumerate}", "</dl>")
+        def repl(match):
+            body = match.group(1)
     
-        # \item[タイトル]
-        text = re.sub(
-            r"\\item\[(.*?)\]",
-            lambda m: f"</dd><dt>{m.group(1)}</dt><dd>",
-            text
+            items = re.findall(
+                r"\\item(?:\[(.*?)\])?(.*?)(?=(\\item|$))",
+                body,
+                flags=re.S
+            )
+    
+            html_items = []
+            for title, content, _ in items:
+                title = (title or "").strip()
+                content = content.strip()
+    
+                html_items.append(
+                    f"<div class='enum-row'>"
+                    f"<span class='enum-title'>{html.escape(title)}</span>"
+                    f"<span class='enum-body'>{content}</span>"
+                    f"</div>"
+                )
+    
+            return "".join(html_items)
+    
+        return re.sub(
+            r"\\begin\{enumerate\}(.*?)\\end\{enumerate\}",
+            repl,
+            text,
+            flags=re.S
         )
-    
-        # \item[]
-        text = re.sub(
-            r"\\item\[\]",
-            "</dd><dt></dt><dd>",
-            text
-        )
-    
-        # 普通の \item
-        text = re.sub(
-            r"\\item",
-            "</dd><dt>•</dt><dd>",
-            text
-        )
-    
-        # 最初の余分な </dd> を消す
-        text = text.replace("<dl></dd>", "<dl>", 1)
-    
-        return text
 
 
 
@@ -1306,12 +1307,22 @@ class Latex(commands.Cog):
     }}
     
     /* enumerate */
-    dl {{
-        display: grid;
-        grid-template-columns: auto 1fr;
-        column-gap: 1em;
-        row-gap: 0.4em;
-        margin: 0;
+    .enum-row {{
+        display: flex;
+        align-items: flex-start;
+        gap: 1em;
+        margin: 0.3em 0;
+    }}
+    
+    .enum-title {{
+        flex: 0 0 auto;
+        font-weight: bold;
+        white-space: nowrap;
+    }}
+    
+    .enum-body {{
+        flex: 1;
+        min-width: 0;
     }}
     
     dt {{
