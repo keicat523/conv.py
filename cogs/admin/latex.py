@@ -1259,7 +1259,7 @@ class Latex(commands.Cog):
             sans-serif;
     }}
     #math {{
-        display: block;
+        display: inline-block;
         white-space: pre-wrap;
     }}
     mjx-container {{
