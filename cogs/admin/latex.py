@@ -1200,7 +1200,7 @@ class Latex(commands.Cog):
     
         text = re.sub(
             r"@@DISPLAY@@(.*?)@@ENDDISPLAY@@",
-            lambda m: f"<div class='display-math'>\\[{m.group(1)}\\]</div>",
+            lambda m: f"<div class='display-math'>\\\\[{m.group(1)}\\\\]</div>",
             text,
             flags=re.S
         )
@@ -1226,7 +1226,7 @@ class Latex(commands.Cog):
                 html_items.append(
                     f"<div class='enum-row'>"
                     f"<span class='enum-title'>{html.escape(title)}</span>"
-                    f"<span class='enum-body'>{content}</span>"
+                    f"<span class='enum-body'>{content.strip()}</span>"
                     f"</div>"
                 )
     
@@ -1299,7 +1299,7 @@ class Latex(commands.Cog):
         load: ['[tex]/ams']
       }},
       options: {{
-        skipHtmlTags: []
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
       }}
     }};
     </script>
@@ -1332,21 +1332,21 @@ class Latex(commands.Cog):
     /* enumerate */
     .enum-row {{
         display: flex;
-        align-items: flex-start;
-        gap: 1em;
+        align-items: baseline;
+        gap: 0.5em;
         margin: 0.35em 0;
     }}
     
     .enum-title {{
-        display: inline-block;
-        width: 2em;
-        margin-right: 0.5em;
+        flex: 0 0 auto;
+        white-space: nowrap;
         font-weight: bold;
     }}
     
     .enum-body {{
-        flex: 1;
-        white-space: pre-wrap;
+        flex: 1 1 auto;
+        min-width: 0;
+        white-space: normal;
     }}
     
     .display-math {{
