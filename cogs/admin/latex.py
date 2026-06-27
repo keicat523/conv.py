@@ -1379,6 +1379,7 @@ class Latex(commands.Cog):
         align-items: baseline;
         gap: 0.5em;
         margin: 0.35em 0;
+        margin-left: 1em;
     }}
     
     .enum-title {{
