@@ -1208,9 +1208,18 @@ class Latex(commands.Cog):
     
         processed_tex = self._convert_latex_breaks(tex_body)
         escaped_tex = html.escape(processed_tex)
-    
+        
         escaped_tex = escaped_tex.replace("&lt;br&gt;", "<br>")
-    
+        
+        escaped_tex = escaped_tex.replace(
+            "&lt;div class=&#x27;math-line&#x27;&gt;",
+            "<div class='math-line'>"
+        )
+        escaped_tex = escaped_tex.replace(
+            "&lt;/div&gt;",
+            "</div>"
+        )
+        
         escaped_tex = re.sub(
             r"@@SPACE:(.*?)@@",
             lambda m: f'<div style="height:{m.group(1)};"></div>',
