@@ -1269,7 +1269,7 @@ class Latex(commands.Cog):
       tex: {{
         inlineMath: [['$', '$'], ['\\(', '\\)']],
         displayMath: [['$$','$$'], ['\\[','\\]']],
-        packages: {'[+]': ['ams']}
+        packages: {{'[+]': ['ams']}}
       }},
       loader: {{
         load: ['[tex]/ams']
