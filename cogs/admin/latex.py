@@ -1253,7 +1253,7 @@ class Latex(commands.Cog):
         escaped_tex = html.escape(processed_tex)
                 
         escaped_tex = escaped_tex.replace("&lt;br&gt;", "<br>")
-        
+
         # div復元
         escaped_tex = escaped_tex.replace(
             "&lt;div class=&#x27;display-math&#x27;&gt;",
@@ -1282,7 +1282,14 @@ class Latex(commands.Cog):
         # 閉じタグ復元
         escaped_tex = escaped_tex.replace("&lt;/div&gt;", "</div>")
         escaped_tex = escaped_tex.replace("&lt;/span&gt;", "</span>")
-                
+        
+        await page.goto(f"file://{html_path.resolve()}")
+        
+        print(await page.content())  # デバッグ
+        print(await page.evaluate("typeof MathJax"))
+
+
+        
         html_content = f"""
     <!DOCTYPE html>
     <html>
