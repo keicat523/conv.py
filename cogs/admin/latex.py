@@ -1284,10 +1284,6 @@ class Latex(commands.Cog):
         escaped_tex = escaped_tex.replace("&lt;/span&gt;", "</span>")
         
         await page.goto(f"file://{html_path.resolve()}")
-        
-        print(await page.content())  # デバッグ
-        print(await page.evaluate("typeof MathJax"))
-
 
         
         html_content = f"""
@@ -1424,6 +1420,13 @@ class Latex(commands.Cog):
             page = await browser.new_page()
     
             await page.set_content(html_content)
+
+                        
+            print(await page.content())  # デバッグ
+            print(await page.evaluate("typeof MathJax"))
+    
+
+            
             await page.wait_for_load_state("networkidle")
             await page.evaluate("""
                 MathJax.typesetPromise(
