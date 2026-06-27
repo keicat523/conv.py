@@ -1170,17 +1170,33 @@ class Latex(commands.Cog):
             )
         except FileNotFoundError:
             return False, "lualatex が見つかりません"
-            
+                
     def _convert_latex_breaks(self, text: str) -> str:
-        # \\[5mm] を特別処理
-        text = re.sub(
-            r"\\\\\[(.*?)\]",
-            lambda m: f'@@SPACE:{m.group(1)}@@',
-            text
-        )
+        def replace_math_block(match):
+            content = match.group(1)
     
-        # 普通の \\ を改行に
-        text = text.replace("\\\\", "<br>")
+            # \\[5mm]
+            content = re.sub(
+                r"\\\\\[(.*?)\]",
+                lambda m: f"$</div><div class='math-line' style='margin-top:{m.group(1)}'>$",
+                content
+            )
+    
+            # 普通の \\
+            content = content.replace(
+                "\\\\",
+                "$</div><div class='math-line'>$"
+            )
+    
+            return f"<div class='math-line'>${content}$</div>"
+    
+        # $...$ の中だけ処理
+        text = re.sub(
+            r"\$(.*?)\$",
+            replace_math_block,
+            text,
+            flags=re.DOTALL
+        )
     
         return text
 
@@ -1219,6 +1235,9 @@ class Latex(commands.Cog):
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
     <style>
+    .math-line {{
+    display: block;
+    }}
     body {{
         background: white;
         padding: 20px;
@@ -1231,7 +1250,7 @@ class Latex(commands.Cog):
             sans-serif;
     }}
     #math {{
-        display: inline-block;
+        display: block;
         white-space: pre-wrap;
     }}
     mjx-container {{
@@ -1257,7 +1276,7 @@ class Latex(commands.Cog):
             await page.set_content(html_content)
             await page.wait_for_timeout(1500)
     
-            element = page.locator("#math")
+            element = page.locator("body")
             await element.screenshot(path=str(output_path))
     
             await browser.close()
