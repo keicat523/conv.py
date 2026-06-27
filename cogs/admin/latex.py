@@ -1170,23 +1170,37 @@ class Latex(commands.Cog):
             )
         except FileNotFoundError:
             return False, "lualatex が見つかりません"
+            
+    def _convert_latex_breaks(self, text: str) -> str:
+        # \\[5mm] を特別処理
+        text = re.sub(
+            r"\\\\\[(.*?)\]",
+            lambda m: f'@@SPACE:{m.group(1)}@@',
+            text
+        )
     
+        # 普通の \\ を改行に
+        text = text.replace("\\\\", "<br>")
+    
+        return text
+
     async def _render_mathjax_to_image(
         self,
         tex_body: str,
         output_path: Path,
     ) -> Path:
-        escaped_tex = html.escape(tex_body)
         
-        # \\[5mm] みたいな改行+余白
+        processed_tex = self._convert_latex_breaks(tex_body)
+        escaped_tex = html.escape(processed_tex)
+
+        escaped_tex = escaped_tex.replace("&lt;br&gt;", "<br>")
+        
         escaped_tex = re.sub(
-            r"\\\\\[(.*?)\]",
+            r"@@SPACE:(.*?)@@",
             lambda m: f'<div style="height:{m.group(1)};"></div>',
             escaped_tex
         )
-        
-        # 普通の改行
-        escaped_tex = escaped_tex.replace("\\\\", "<br>")
+
     <!DOCTYPE html>
     <html>
     <head>
