@@ -1204,6 +1204,37 @@ class Latex(commands.Cog):
             flags=re.DOTALL
         )
 
+    
+    def _convert_enumerate(self, text: str) -> str:
+        text = text.replace(r"\begin{enumerate}", "<dl>")
+        text = text.replace(r"\end{enumerate}", "</dl>")
+    
+        # \item[タイトル]
+        text = re.sub(
+            r"\\item\[(.*?)\]",
+            lambda m: f"</dd><dt>{m.group(1)}</dt><dd>",
+            text
+        )
+    
+        # \item[]
+        text = re.sub(
+            r"\\item\[\]",
+            "</dd><dt></dt><dd>",
+            text
+        )
+    
+        # 普通の \item
+        text = re.sub(
+            r"\\item",
+            "</dd><dt>•</dt><dd>",
+            text
+        )
+    
+        # 最初の余分な </dd> を消す
+        text = text.replace("<dl></dd>", "<dl>", 1)
+    
+        return text
+
 
 
     async def _render_mathjax_to_image(
@@ -1211,12 +1242,17 @@ class Latex(commands.Cog):
         tex_body: str,
         output_path: Path,
     ) -> Path:
-    
+        
+        # enumerate展開
+        processed_tex = self._convert_enumerate(tex_body)
+        # 改行展開
         processed_tex = self._convert_latex_breaks(tex_body)
+        # Escape
         escaped_tex = html.escape(processed_tex)
-        
+
+
+        # html復元
         escaped_tex = escaped_tex.replace("&lt;br&gt;", "<br>")
-        
         escaped_tex = escaped_tex.replace(
             "&lt;div class=&#x27;math-line&#x27;&gt;",
             "<div class='math-line'>"
@@ -1225,13 +1261,13 @@ class Latex(commands.Cog):
             "&lt;/div&gt;",
             "</div>"
         )
-        
         escaped_tex = re.sub(
             r"@@SPACE:(.*?)@@",
             lambda m: f'<div style="height:{m.group(1)};"></div>',
             escaped_tex
         )
-    
+
+        
         html_content = f"""
     <!DOCTYPE html>
     <html>
@@ -1273,7 +1309,22 @@ class Latex(commands.Cog):
         width: fit-content;
         line-height: 1.6;
     }}
+    dl {{
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: 1em;
+        row-gap: 0.3em;
+        margin: 0;
+    }}
     
+    dt {{
+        font-weight: bold;
+        white-space: nowrap;
+    }}
+    
+    dd {{
+        margin: 0;
+    }}
     br {{
         display: block;
         content: "";
