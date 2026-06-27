@@ -1170,11 +1170,12 @@ class Latex(commands.Cog):
             )
         except FileNotFoundError:
             return False, "lualatex が見つかりません"
-                                
+                                    
     def _convert_latex_breaks(self, text: str) -> str:
         display_blocks = []
+        inline_blocks = []
     
-        # \[...\] を全部退避
+        # \[...\] 退避
         def save_display(m):
             display_blocks.append(m.group(1))
             return f"@@DISPLAY{len(display_blocks)-1}@@"
@@ -1186,19 +1187,32 @@ class Latex(commands.Cog):
             flags=re.S
         )
     
-        # \\[5mm] → 空白div
+        # $...$ 退避
+        def save_inline(m):
+            inline_blocks.append(m.group(1))
+            return f"@@INLINE{len(inline_blocks)-1}@@"
+    
+        text = re.sub(
+            r"\$(.*?)\$",
+            save_inline,
+            text,
+            flags=re.S
+        )
+    
+        # \\[5mm]
         text = re.sub(
             r"\\\\\[(.*?)\]",
             lambda m: f"<div style='height:{m.group(1)};'></div>",
             text
         )
     
-        # \quad / \qquad
+        # \qquad → 2em
         text = text.replace(
             r"\qquad",
             "<span style='display:inline-block;width:2em'></span>"
         )
     
+        # \quad → 1em
         text = text.replace(
             r"\quad",
             "<span style='display:inline-block;width:1em'></span>"
@@ -1214,6 +1228,13 @@ class Latex(commands.Cog):
         # 普通の改行
         text = text.replace(r"\\", "<br>")
     
+        # inline math 復元（←ここ重要）
+        for i, content in enumerate(inline_blocks):
+            text = text.replace(
+                f"@@INLINE{i}@@",
+                f"\\({content}\\)"
+            )
+    
         # display math 復元
         for i, content in enumerate(display_blocks):
             text = text.replace(
@@ -1222,7 +1243,6 @@ class Latex(commands.Cog):
             )
     
         return text
-    
     def _convert_enumerate(self, text: str) -> str:
         def repl(match):
             body = match.group(1)
@@ -1309,7 +1329,7 @@ class Latex(commands.Cog):
     <script>
     window.MathJax = {{
       tex: {{
-        inlineMath: [['$', '$'],
+        inlineMath: [['$', '$'],['\\(', '\\)']],
         displayMath: [['$$','$$'], ['\\[','\\]']],
         processEnvironments: true,
         packages: {{'[+]': ['ams']}}
