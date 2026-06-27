@@ -887,30 +887,34 @@ class Latex(commands.Cog):
 
         shutil.rmtree(project_dir)
         await ctx.reply(f"`{project_name}` を削除しました")
-
+    
     async def _latex_image(self, ctx: commands.Context, payload: str) -> None:
         if Image is None or ImageChops is None:
-            await ctx.reply("`tex image` には `pdf2image` と `Pillow` のインストールが必要です")
+            await ctx.reply("Pillow が必要です")
             return
-
+    
         tex_body = self._extract_tex_body(payload)
         if not tex_body:
             prompt = await ctx.reply("tex文を入力してください(xでキャンセル)")
             message = await self._wait_for_same_user_message(ctx, timeout=LATEX_EDIT_TIMEOUT)
+    
             if message is None:
                 await self._mark_menu_stopped(prompt)
                 return
+    
             if message.content.strip().lower() == "x":
                 await self._mark_menu_stopped(prompt)
                 return
+    
             tex_body = self._extract_tex_body(message.content)
+    
             if not tex_body:
                 await ctx.reply("texコードブロックがありません")
                 return
+    
         status_message = await ctx.reply("画像を生成しています...")
-        
         png_path = TEMP_LATEX_DIR / "image.png"
-        
+    
         try:
             await self._render_mathjax_to_image(tex_body, png_path)
         except Exception as exc:
@@ -918,7 +922,7 @@ class Latex(commands.Cog):
                 content=f"画像化に失敗しました\n```text\n{self._format_error_tail(str(exc))}\n```"
             )
             return
-        
+    
         if getattr(ctx, "is_slash", False):
             await status_message.edit(
                 content="完了しました",
@@ -927,17 +931,9 @@ class Latex(commands.Cog):
         else:
             await status_message.edit(content="完了しました")
             await ctx.reply(file=discord.File(png_path))
-        
+    
         if png_path.exists():
             png_path.unlink()
-
-
-        if getattr(ctx, "is_slash", False):
-            await status_message.edit(content="完了しました", attachments=[discord.File(rendered)])
-        else:
-            await status_message.edit(content="完了しました")
-            await ctx.reply(file=discord.File(png_path))
-        self._cleanup_temp_latex_files(stem)
 
     async def _latex_settings(self, ctx: commands.Context, args: tuple[str, ...]) -> None:
         if not args:
