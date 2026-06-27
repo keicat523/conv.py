@@ -3,3 +3,4 @@ Pillow
 sympy
 python-dotenv
 flask
+playwright
