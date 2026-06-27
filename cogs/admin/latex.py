@@ -1359,11 +1359,11 @@ class Latex(commands.Cog):
         font-size: 36px;
         line-height: 1.8;
         font-family:
+            "Hiragino Mincho ProN",
             "Noto Serif CJK JP",
             "IPAexMincho",
             "IPAMincho",
             "Yu Mincho",
-            "Hiragino Mincho ProN",
             sans-serif;
     }}
     
