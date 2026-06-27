@@ -1239,7 +1239,7 @@ class Latex(commands.Cog):
         for i, content in enumerate(display_blocks):
             text = text.replace(
                 f"@@DISPLAY{i}@@",
-                f"<div class='display-math'>\\[{content}\\]</div>"
+                f"<div class='display-math'>$$[{content}$$]</div>"
             )
         return text
 
