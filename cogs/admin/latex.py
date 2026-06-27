@@ -7,10 +7,6 @@ from pathlib import Path
 import discord
 from discord import app_commands
 from discord.ext import commands
-try:
-    from pdf2image import convert_from_path
-except ModuleNotFoundError:
-    convert_from_path = None
 
 try:
     from PIL import Image, ImageChops
@@ -1197,7 +1193,7 @@ class Latex(commands.Cog):
         if not pdf_path.exists():
             return False, f"{stem}.pdf が生成されませんでした"
         return True, lua_text
-
+    
     async def _render_pdf_to_image(self, pdf_path: Path, output_path: Path) -> Path:
         temp_base = output_path.with_suffix("")
     
@@ -1207,7 +1203,7 @@ class Latex(commands.Cog):
             "-gray",
             "-singlefile",
             "-r",
-            "80",
+            str(IMAGE_RENDER_DPI),
             str(pdf_path),
             str(temp_base),
             stdout=asyncio.subprocess.PIPE,
