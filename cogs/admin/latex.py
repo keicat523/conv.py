@@ -37,7 +37,7 @@ LATEX_LINEBREAK_DIMENSION_RE = re.compile(
 DEFAULT_TEX = "\n".join(
     [
         "\\documentclass{ltjsarticle}",
-        "\\usepackage{tcolorbox,mathcomp,tcolorbox,amsmath,mathtools,amssymb,graphicx,ascmac,fancybox,framed,tikz,comment,calc,enumitem}",
+        "\\usepackage{amsmath,mathtools,amssymb}",
         "\\begin{document}",
         "",
         "\\end{document}",
@@ -46,11 +46,8 @@ DEFAULT_TEX = "\n".join(
 )
 IMAGE_TEX_TEMPLATE = "\n".join(
     [
-        "\\RequirePackage{plautopatch}",
         "\\documentclass[preview,border=3pt]{ltjsarticle}",
-        "\\usepackage{tcolorbox,mathcomp,tcolorbox,amsmath,mathtools,amssymb,graphicx,ascmac,fancybox,framed,tikz,comment,calc,enumitem}",
-        "\\tcbuselibrary{breakable, skins, theorems}",
-        "\\usetikzlibrary{positioning, intersections, calc, arrows.meta,math}",
+        "\\usepackage{amsmath,mathtools,amssymb}",
         "\\pagestyle{empty}",
         "\\begin{document}",
         IMAGE_TEX_BODY_PLACEHOLDER,
