@@ -1172,24 +1172,30 @@ class Latex(commands.Cog):
             return False, "lualatex が見つかりません"
                 
     def _convert_latex_breaks(self, text: str) -> str:
-        def replace_math_block(match):
-            content = match.group(1)
+        """
+        LaTeX の改行を HTML ブロックへ変換する
+        - \\      → 新しい行
+        - \\[5mm] → 新しい行 + 上マージン
+        """
     
-            # \\[5mm]
-            content = re.sub(
-                r"\\\\\[(.*?)\]",
-                lambda m: f"$</div><div class='math-line' style='margin-top:{m.group(1)}'>$",
-                content
-            )
+        # \\[5mm]
+        text = re.sub(
+            r"\\\\\[(.*?)\]",
+            lambda m: (
+                "</div>"
+                f"<div class='math-line' style='margin-top:{m.group(1)};'>"
+            ),
+            text
+        )
     
-            # 普通の \\
-            content = content.replace(
-                "\\\\",
-                "$</div><div class='math-line'>$"
-            )
+        # 普通の \\
+        text = text.replace(
+            "\\\\",
+            "</div><div class='math-line'>"
+        )
     
-            # 最初と最後に $ を補う
-            return f"<div class='math-line'>${content}$</div>"
+        # 全体を囲う
+        return f"<div class='math-line'>{text}</div>"
     
         return re.sub(
             r"\$(.*?)\$",
