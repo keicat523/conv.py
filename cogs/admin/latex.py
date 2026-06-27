@@ -1237,6 +1237,9 @@ class Latex(commands.Cog):
         inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
         displayMath: [['$$','$$'], ['\\\\[','\\\\]']]
       }},
+      loader: {{
+        load: ['[tex]/ams']
+      }},
       options: {{
         skipHtmlTags: []
       }}
@@ -1246,7 +1249,7 @@ class Latex(commands.Cog):
     <style>
     body {{
         margin: 0;
-        padding: 20px;
+        padding: 3em;
         background: white;
         width: fit-content;
         height: fit-content;
