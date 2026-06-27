@@ -1232,7 +1232,7 @@ class Latex(commands.Cog):
         for i, content in enumerate(inline_blocks):
             text = text.replace(
                 f"@@INLINE{i}@@",
-                f"\\({content}\\)"
+            f"<span class='inline-math'>\\({content}\\)</span>"
             )
     
         # display math 復元
@@ -1359,13 +1359,19 @@ class Latex(commands.Cog):
         font-size: 36px;
         line-height: 1.8;
         font-family:
-            "Noto Sans CJK JP",
             "Noto Serif CJK JP",
-            "IPAexGothic",
-            "IPAGothic",
+            "IPAexMincho",
+            "IPAMincho",
+            "Yu Mincho",
+            "Hiragino Mincho ProN",
             sans-serif;
     }}
     
+    .inline-math {{
+        display: inline-block;
+        margin: 0 0.5em;
+    }}
+
     #math {{
         display: inline-block;
         max-width: 120em;         /* 横2倍くらい */
