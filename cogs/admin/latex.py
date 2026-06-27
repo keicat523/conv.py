@@ -1170,39 +1170,43 @@ class Latex(commands.Cog):
             )
         except FileNotFoundError:
             return False, "lualatex が見つかりません"
-                
+                    
     def _convert_latex_breaks(self, text: str) -> str:
-        """
-        LaTeX の改行を HTML ブロックへ変換する
-        - \\      → 新しい行
-        - \\[5mm] → 新しい行 + 上マージン
-        """
-    
-        # \\[5mm]
+        # display math \[ ... \]
         text = re.sub(
-            r"\\\\\[(.*?)\]",
-            lambda m: (
-                "</div>"
-                f"<div class='math-line' style='margin-top:{m.group(1)};'>"
-            ),
-            text
-        )
-    
-        # 普通の \\
-        text = text.replace(
-            "\\\\",
-            "</div><div class='math-line'>"
-        )
-    
-        # 全体を囲う
-        return f"<div class='math-line'>{text}</div>"
-    
-        return re.sub(
-            r"\$(.*?)\$",
-            replace_math_block,
+            r"\\\[(.*?)\\\]",
+            lambda m: f"<div class='math-block'>{m.group(1)}</div>",
             text,
             flags=re.DOTALL
         )
+    
+        # math mode 内の \\[5mm]
+        text = re.sub(
+            r"\\\\\[(.*?)\]",
+            lambda m: f"<div style='height:{m.group(1)}'></div>",
+            text
+        )
+    
+        # 普通の改行 \\
+        text = text.replace(
+            "\\\\",
+            "<br>"
+        )
+    
+        # \quad
+        text = text.replace(
+            r"\quad",
+            "<span style='display:inline-block;width:1em'></span>"
+        )
+    
+        # \hspace{...}
+        text = re.sub(
+            r"\\hspace\{(.*?)\}",
+            lambda m: f"<span style='display:inline-block;width:{m.group(1)}'></span>",
+            text
+        )
+    
+        return text
 
     
     def _convert_enumerate(self, text: str) -> str:
@@ -1245,14 +1249,15 @@ class Latex(commands.Cog):
         # enumerateだけ変換
         processed_tex = self._convert_enumerate(tex_body)
         # HTML escape
+        processed_tex = self._convert_latex_breaks(processed_tex)
         escaped_tex = html.escape(processed_tex)
         
-        # enumerate 用タグだけ復元
-        escaped_tex = re.sub(
-            r"&lt;(\/?(?:dl|dt|dd).*?)&gt;",
-            r"<\1>",
-            escaped_tex
-        )
+        escaped_tex = escaped_tex.replace("&lt;br&gt;", "<br>")
+        escaped_tex = escaped_tex.replace("&lt;div", "<div")
+        escaped_tex = escaped_tex.replace("&lt;/div&gt;", "</div>")
+        escaped_tex = escaped_tex.replace("&lt;span", "<span")
+        escaped_tex = escaped_tex.replace("&lt;/span&gt;", "</span>")
+        escaped_tex = escaped_tex.replace("&#x27;", "'")
                 
         html_content = f"""
     <!DOCTYPE html>
@@ -1262,9 +1267,9 @@ class Latex(commands.Cog):
     <script>
     window.MathJax = {{
       tex: {{
-        inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
-        displayMath: [['$$','$$'], ['\\\\[','\\\\]']],
-        packages: {{'[+]': ['ams']}}
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$','$$'], ['\\[','\\]']],
+        packages: {'[+]': ['ams']}
       }},
       loader: {{
         load: ['[tex]/ams']
@@ -1272,17 +1277,19 @@ class Latex(commands.Cog):
       options: {{
         skipHtmlTags: []
       }}
-    }};
+    };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    
     <style>
     body {{
         margin: 0;
-        padding: 3em;
+        padding: 2em;              /* 周囲余白 */
         background: white;
         width: fit-content;
         height: fit-content;
         font-size: 36px;
+        line-height: 1.8;
         font-family:
             "Noto Sans CJK JP",
             "Noto Serif CJK JP",
@@ -1293,14 +1300,17 @@ class Latex(commands.Cog):
     
     #math {{
         display: inline-block;
-        width: fit-content;
-        line-height: 1.6;
+        max-width: 120em;         /* 横2倍くらい */
+        white-space: normal;
+        overflow-wrap: break-word;
     }}
+    
+    /* enumerate */
     dl {{
         display: grid;
         grid-template-columns: auto 1fr;
         column-gap: 1em;
-        row-gap: 0.3em;
+        row-gap: 0.4em;
         margin: 0;
     }}
     
@@ -1312,20 +1322,38 @@ class Latex(commands.Cog):
     dd {{
         margin: 0;
     }}
+    
+    /* \\ */
     br {{
         display: block;
-        content: "";
-        margin-top: 0.35em;
+        margin-top: 0.7em;        /* frac後の改行量を増やす */
     }}
     
+    /* \[...\] */
+    .math-block {{
+        display: block;
+        margin: 0.8em 0;
+    }}
+    
+    .math-block mjx-container {{
+        display: block !important;
+        text-align: left !important;
+    }}
+    
+    /* MathJax */
     mjx-container {{
-        display: inline !important;
         width: auto !important;
         margin: 0 !important;
         font-size: 90% !important;
     }}
+    
+    /* 日本語本文だけ少し大きく見せる */
+    #math {{
+        letter-spacing: 0.03em;
+    }}
     </style>
     </head>
+    
     <body>
     <div id="math">
     {escaped_tex}
