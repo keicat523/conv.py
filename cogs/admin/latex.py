@@ -1201,11 +1201,13 @@ class Latex(commands.Cog):
     def _render_pdf_to_image(self, pdf_path: Path, output_path: Path) -> Path:
         pages = convert_from_path(
             str(pdf_path),
-            dpi=IMAGE_RENDER_DPI,
+            dpi=80,
             first_page=1,
             last_page=1,
+            grayscale=True,
             single_file=True,
-            timeout=20,
+            thread_count=1,
+            timeout=10,
         )
         if not pages:
             raise RuntimeError("PDF から画像を生成できませんでした")
@@ -1221,7 +1223,7 @@ class Latex(commands.Cog):
             gap = max(20, margin_px // 2) if margin_px > 0 else 0
             width = max(image.width for image in cropped_pages)
             height = sum(image.height for image in cropped_pages) + gap * (len(cropped_pages) - 1)
-            merged = Image.new("RGB", (width, height), "white")
+            merged = Image.new("L", (width, height), "white")
             y = 0
             for image in cropped_pages:
                 x = (width - image.width) // 2
@@ -1229,7 +1231,7 @@ class Latex(commands.Cog):
                 y += image.height + gap
             canvas = self._add_margin(merged, margin_px) if margin_px > 0 else merged
 
-        canvas.save(output_path)
+        canvas.save(output_path, optimize=True)
         return output_path
 
     def _crop_content(self, image: Image.Image) -> Image.Image | None:
