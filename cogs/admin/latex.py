@@ -1189,18 +1189,19 @@ class Latex(commands.Cog):
         tex_body: str,
         output_path: Path,
     ) -> Path:
-        
+    
         processed_tex = self._convert_latex_breaks(tex_body)
         escaped_tex = html.escape(processed_tex)
-
+    
         escaped_tex = escaped_tex.replace("&lt;br&gt;", "<br>")
-        
+    
         escaped_tex = re.sub(
             r"@@SPACE:(.*?)@@",
             lambda m: f'<div style="height:{m.group(1)};"></div>',
             escaped_tex
         )
-
+    
+        html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
@@ -1231,6 +1232,7 @@ class Latex(commands.Cog):
     }}
     #math {{
         display: inline-block;
+        white-space: pre-wrap;
     }}
     mjx-container {{
         font-size: 120% !important;
