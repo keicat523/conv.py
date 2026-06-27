@@ -1170,40 +1170,35 @@ class Latex(commands.Cog):
             )
         except FileNotFoundError:
             return False, "lualatex が見つかりません"
-                    
+                        
     def _convert_latex_breaks(self, text: str) -> str:
-        # display math \[ ... \]
+        # display math を保護
         text = re.sub(
             r"\\\[(.*?)\\\]",
-            lambda m: f"<div class='math-block'>{m.group(1)}</div>",
+            lambda m: f"@@DISPLAY@@{m.group(1)}@@ENDDISPLAY@@",
             text,
-            flags=re.DOTALL
+            flags=re.S
         )
     
-        # math mode 内の \\[5mm]
-        text = re.sub(
-            r"\\\\\[(.*?)\]",
-            lambda m: f"<div style='height:{m.group(1)}'></div>",
-            text
-        )
-    
-        # 普通の改行 \\
-        text = text.replace(
-            "\\\\",
-            "<br>"
-        )
+        # 改行
+        text = text.replace(r"\\", "<br>")
     
         # \quad
-        text = text.replace(
-            r"\quad",
-            "<span style='display:inline-block;width:1em'></span>"
-        )
+        text = text.replace(r"\quad", "<span style='display:inline-block;width:1em'></span>")
     
         # \hspace{...}
         text = re.sub(
             r"\\hspace\{(.*?)\}",
             lambda m: f"<span style='display:inline-block;width:{m.group(1)}'></span>",
             text
+        )
+    
+        # display復元
+        text = re.sub(
+            r"@@DISPLAY@@(.*?)@@ENDDISPLAY@@",
+            lambda m: f"<div class='display-math'>\\[{m.group(1)}\\]</div>",
+            text,
+            flags=re.S
         )
     
         return text
@@ -1252,13 +1247,32 @@ class Latex(commands.Cog):
         # HTML escape
         processed_tex = self._convert_latex_breaks(processed_tex)
         escaped_tex = html.escape(processed_tex)
-        
+                
         escaped_tex = escaped_tex.replace("&lt;br&gt;", "<br>")
-        escaped_tex = escaped_tex.replace("&lt;div", "<div")
+        
+        # div復元
+        escaped_tex = escaped_tex.replace(
+            "&lt;div class=&#x27;display-math&#x27;&gt;",
+            "<div class='display-math'>"
+        )
+        escaped_tex = escaped_tex.replace(
+            "&lt;div class=&#x27;enum-row&#x27;&gt;",
+            "<div class='enum-row'>"
+        )
+        
+        # span復元
+        escaped_tex = escaped_tex.replace(
+            "&lt;span class=&#x27;enum-title&#x27;&gt;",
+            "<span class='enum-title'>"
+        )
+        escaped_tex = escaped_tex.replace(
+            "&lt;span class=&#x27;enum-body&#x27;&gt;",
+            "<span class='enum-body'>"
+        )
+        
+        # 閉じタグ復元
         escaped_tex = escaped_tex.replace("&lt;/div&gt;", "</div>")
-        escaped_tex = escaped_tex.replace("&lt;span", "<span")
         escaped_tex = escaped_tex.replace("&lt;/span&gt;", "</span>")
-        escaped_tex = escaped_tex.replace("&#x27;", "'")
                 
         html_content = f"""
     <!DOCTYPE html>
@@ -1311,18 +1325,23 @@ class Latex(commands.Cog):
         display: flex;
         align-items: flex-start;
         gap: 1em;
-        margin: 0.3em 0;
+        margin: 0.35em 0;
     }}
     
     .enum-title {{
         flex: 0 0 auto;
+        min-width: 4em;
         font-weight: bold;
-        white-space: nowrap;
     }}
     
     .enum-body {{
         flex: 1;
-        min-width: 0;
+        white-space: pre-wrap;
+    }}
+    
+    .display-math {{
+        display: block;
+        margin: 0.8em 0;
     }}
     
     dt {{
@@ -1360,7 +1379,11 @@ class Latex(commands.Cog):
     
     /* 日本語本文だけ少し大きく見せる */
     #math {{
-        letter-spacing: 0.03em;
+        display: inline-block;
+        width: max-content;
+        min-width: 0;
+        line-height: 1.6;
+        white-space: normal;
     }}
     </style>
     </head>
