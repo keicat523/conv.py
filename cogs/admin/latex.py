@@ -1311,6 +1311,7 @@ class Latex(commands.Cog):
       tex: {{
         inlineMath: [['$', '$'],
         displayMath: [['$$','$$'], ['\\[','\\]']],
+        processEnvironments: true,
         packages: {{'[+]': ['ams']}}
       }},
       loader: {{
@@ -1435,8 +1436,16 @@ class Latex(commands.Cog):
             page = await browser.new_page()
     
             await page.set_content(html_content)
-
-                        
+            await page.evaluate("""
+            async () => {{
+                await MathJax.startup.promise;
+                MathJax.typesetClear();
+                await MathJax.typesetPromise([
+                    document.getElementById('math')
+                ]);
+            }}
+            """)
+                                    
             print(await page.content())  # デバッグ
             print(await page.evaluate("typeof MathJax"))
     
