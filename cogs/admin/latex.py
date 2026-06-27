@@ -1282,7 +1282,7 @@ class Latex(commands.Cog):
         background: white;
         width: fit-content;
         height: fit-content;
-        font-size: 32px;
+        font-size: 36px;
         font-family:
             "Noto Sans CJK JP",
             "Noto Serif CJK JP",
@@ -1322,7 +1322,7 @@ class Latex(commands.Cog):
         display: inline !important;
         width: auto !important;
         margin: 0 !important;
-        font-size: 120% !important;
+        font-size: 90% !important;
     }}
     </style>
     </head>
