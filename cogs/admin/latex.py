@@ -1434,8 +1434,21 @@ class Latex(commands.Cog):
     
     /* MathJax */
     mjx-container {{
-        font-weight: normal !important;
-        letter-spacing: 0 !important;
+        font-size: 90% !important;
+        margin: 0 !important;
+        font-weight: 400 !important;
+        font-family:
+            "STIX Two Math",
+            "Cambria Math",
+            "Times New Roman",
+            serif !important;
+    }}
+    
+    mjx-math,
+    mjx-mi,
+    mjx-mo,
+    mjx-mn {{
+        font-weight: 400 !important;
     }}
 
     
