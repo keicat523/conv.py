@@ -1269,7 +1269,12 @@ class Latex(commands.Cog):
             "&lt;span class=&#x27;enum-body&#x27;&gt;",
             "<span class='enum-body'>"
         )
-        
+        # style付きspan復元（\quad, \hspace）
+        escaped_tex = re.sub(
+            r"&lt;span style=&#x27;(.*?)&#x27;&gt;&lt;/span&gt;",
+            lambda m: f"<span style='{m.group(1)}'></span>",
+            escaped_tex
+        )
         # 閉じタグ復元
         escaped_tex = escaped_tex.replace("&lt;/div&gt;", "</div>")
         escaped_tex = escaped_tex.replace("&lt;/span&gt;", "</span>")
