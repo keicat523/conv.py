@@ -1170,9 +1170,9 @@ class Latex(commands.Cog):
             )
         except FileNotFoundError:
             return False, "lualatex が見つかりません"
-                        
+                            
     def _convert_latex_breaks(self, text: str) -> str:
-        # display math を保護
+        # display math保護
         text = re.sub(
             r"\\\[(.*?)\\\]",
             lambda m: f"@@DISPLAY@@{m.group(1)}@@ENDDISPLAY@@",
@@ -1180,20 +1180,24 @@ class Latex(commands.Cog):
             flags=re.S
         )
     
-        # 改行
-        text = text.replace(r"\\", "<br>")
+        text = text.replace(
+            r"\quad",
+            "<span style='display:inline-block;width:1em'></span>"
+        )
     
-        # \quad
-        text = text.replace(r"\quad", "<span style='display:inline-block;width:1em'></span>")
+        text = text.replace(
+            r"\qquad",
+            "<span style='display:inline-block;width:2em'></span>"
+        )
     
-        # \hspace{...}
         text = re.sub(
             r"\\hspace\{(.*?)\}",
             lambda m: f"<span style='display:inline-block;width:{m.group(1)}'></span>",
             text
         )
     
-        # display復元
+        text = text.replace(r"\\", "<br>")
+    
         text = re.sub(
             r"@@DISPLAY@@(.*?)@@ENDDISPLAY@@",
             lambda m: f"<div class='display-math'>\\[{m.group(1)}\\]</div>",
@@ -1287,7 +1291,7 @@ class Latex(commands.Cog):
     <script>
     window.MathJax = {{
       tex: {{
-        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        inlineMath: [['$', '$'],
         displayMath: [['$$','$$'], ['\\[','\\]']],
         packages: {{'[+]': ['ams']}}
       }},
@@ -1334,8 +1338,9 @@ class Latex(commands.Cog):
     }}
     
     .enum-title {{
-        flex: 0 0 auto;
-        min-width: 4em;
+        display: inline-block;
+        width: 2em;
+        margin-right: 0.5em;
         font-weight: bold;
     }}
     
