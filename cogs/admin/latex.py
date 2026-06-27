@@ -1439,9 +1439,9 @@ class Latex(commands.Cog):
         font-size: 90% !important;
         font-weight: normal !important;
     }}
-    mjx-container svg {
+    mjx-container svg {{
         stroke-width: 0 !important;
-    }
+    }}
 
     
     /* 日本語本文だけ少し大きく見せる */
