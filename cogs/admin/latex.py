@@ -1188,17 +1188,17 @@ class Latex(commands.Cog):
                 "$</div><div class='math-line'>$"
             )
     
+            # 最初と最後に $ を補う
             return f"<div class='math-line'>${content}$</div>"
     
-        # $...$ の中だけ処理
-        text = re.sub(
+        return re.sub(
             r"\$(.*?)\$",
             replace_math_block,
             text,
             flags=re.DOTALL
         )
-    
-        return text
+
+
 
     async def _render_mathjax_to_image(
         self,
