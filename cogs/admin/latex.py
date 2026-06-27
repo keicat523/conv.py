@@ -1218,19 +1218,19 @@ class Latex(commands.Cog):
         html_path.write_text(html, encoding="utf-8")
     
         async with async_playwright() as p:
-            browser = await p.chromium.launch()
+            browser = await p.chromium.launch(args=["--no-sandbox"])
             page = await browser.new_page()
     
-            await page.goto(f"file://{html_path.resolve()}")
-            await page.wait_for_timeout(1000)
+            await page.set_content(html)
+            await page.wait_for_timeout(1500)
     
             element = page.locator("#math")
             await element.screenshot(path=str(output_path))
     
             await browser.close()
     
-        if html_path.exists():
-            html_path.unlink()
+        if not output_path.exists():
+            raise RuntimeError("MathJax画像の生成に失敗しました")
     
         return output_path
 
