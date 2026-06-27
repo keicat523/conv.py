@@ -1474,7 +1474,6 @@ class Latex(commands.Cog):
 
             
             await page.wait_for_load_state("networkidle")
-            """)
     
             element = page.locator("body")
             await element.screenshot(path=str(output_path))
