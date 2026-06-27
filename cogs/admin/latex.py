@@ -1251,6 +1251,7 @@ class Latex(commands.Cog):
         background: white;
         padding: 20px;
         font-size: 32px;
+        width: fit-content;
         font-family:
             "Noto Sans CJK JP",
             "Noto Serif CJK JP",
@@ -1259,11 +1260,11 @@ class Latex(commands.Cog):
             sans-serif;
     }}
     #math {{
-        display: inline-block;
-        white-space: pre-wrap;
+        display: inline-flex;
     }}
     mjx-container {{
         font-size: 120% !important;
+        width:auto;
     }}
     </style>
     </head>
