@@ -8,7 +8,7 @@ from pathlib import Path
 import discord
 from discord import app_commands
 from discord.ext import commands
-
+import html
 try:
     from PIL import Image, ImageChops
 except ModuleNotFoundError:
@@ -1184,7 +1184,11 @@ class Latex(commands.Cog):
     <script>
     window.MathJax = {{
       tex: {{
-        inlineMath: [['$', '$'], ['\\\\(', '\\\\)']]
+        inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
+        displayMath: [['$$','$$'], ['\\\\[','\\\\]']]
+      }},
+      options: {{
+        skipHtmlTags: []
       }}
     }};
     </script>
@@ -1211,9 +1215,7 @@ class Latex(commands.Cog):
     </head>
     <body>
     <div id="math">
-    $$
-    {tex_body}
-    $$
+    {html.escape(tex_body)}
     </div>
     </body>
     </html>
