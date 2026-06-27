@@ -1241,8 +1241,10 @@ class Latex(commands.Cog):
                 f"@@DISPLAY{i}@@",
                 f"<div class='display-math'>\\[{content}\\]</div>"
             )
-    
         return text
+
+
+
     def _convert_enumerate(self, text: str) -> str:
         def repl(match):
             body = match.group(1)
@@ -1285,7 +1287,7 @@ class Latex(commands.Cog):
         processed_tex = self._convert_enumerate(tex_body)
         # HTML escape
         processed_tex = self._convert_latex_breaks(processed_tex)
-        escaped_tex = html.escape(processed_tex)
+        escaped_tex = processed_tex
                 
         escaped_tex = escaped_tex.replace("&lt;br&gt;", "<br>")
 
@@ -1329,7 +1331,7 @@ class Latex(commands.Cog):
     <script>
     window.MathJax = {{
       tex: {{
-        inlineMath: [['$', '$'],['\\(', '\\)']],
+        inlineMath: [['$', '$'],['\\\\(', '\\\\)']],
         displayMath: [['$$','$$'], ['\\[','\\]']],
         processEnvironments: true,
         packages: {{'[+]': ['ams']}}
@@ -1472,10 +1474,6 @@ class Latex(commands.Cog):
 
             
             await page.wait_for_load_state("networkidle")
-            await page.evaluate("""
-                MathJax.typesetPromise(
-                    [document.getElementById('math')]
-                )
             """)
     
             element = page.locator("body")
