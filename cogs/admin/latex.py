@@ -1242,32 +1242,17 @@ class Latex(commands.Cog):
         tex_body: str,
         output_path: Path,
     ) -> Path:
-        
-        # enumerate展開
-        processed_tex = self._convert_enumerate(tex_body)
-        # 改行展開
-        processed_tex = self._convert_latex_breaks(tex_body)
-        # Escape
+                
+        # HTML escape
         escaped_tex = html.escape(processed_tex)
-
-
-        # html復元
-        escaped_tex = escaped_tex.replace("&lt;br&gt;", "<br>")
-        escaped_tex = escaped_tex.replace(
-            "&lt;div class=&#x27;math-line&#x27;&gt;",
-            "<div class='math-line'>"
-        )
-        escaped_tex = escaped_tex.replace(
-            "&lt;/div&gt;",
-            "</div>"
-        )
+        
+        # enumerate 用タグだけ復元
         escaped_tex = re.sub(
-            r"@@SPACE:(.*?)@@",
-            lambda m: f'<div style="height:{m.group(1)};"></div>',
+            r"&lt;(\/?(?:dl|dt|dd).*?)&gt;",
+            r"<\1>",
             escaped_tex
         )
-
-        
+                
         html_content = f"""
     <!DOCTYPE html>
     <html>
@@ -1277,7 +1262,8 @@ class Latex(commands.Cog):
     window.MathJax = {{
       tex: {{
         inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
-        displayMath: [['$$','$$'], ['\\\\[','\\\\]']]
+        displayMath: [['$$','$$'], ['\\\\[','\\\\]']],
+        packages: {'[+]': ['ams']}
       }},
       loader: {{
         load: ['[tex]/ams']
