@@ -1356,7 +1356,7 @@ class Latex(commands.Cog):
         background: white;
         width: fit-content;
         height: fit-content;
-        font-size: 36px;
+        font-size: 32px;
         line-height: 1.8;
         font-family:
             "Hiragino Mincho ProN",
@@ -1434,7 +1434,7 @@ class Latex(commands.Cog):
     
     /* MathJax */
     mjx-container {{
-        font-size: 90% !important;
+        font-size: 100% !important;
         margin: 0 !important;
         font-weight: 400 !important;
         font-family:
