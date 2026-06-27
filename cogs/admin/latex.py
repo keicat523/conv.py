@@ -936,7 +936,7 @@ class Latex(commands.Cog):
             await status_message.edit(content="完了しました", attachments=[discord.File(rendered)])
         else:
             await status_message.edit(content="完了しました")
-            await ctx.reply(file=discord.File(rendered))
+            await ctx.reply(file=discord.File(png_path))
         self._cleanup_temp_latex_files(stem)
 
     async def _latex_settings(self, ctx: commands.Context, args: tuple[str, ...]) -> None:
