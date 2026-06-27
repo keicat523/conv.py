@@ -1177,8 +1177,16 @@ class Latex(commands.Cog):
         output_path: Path,
     ) -> Path:
         escaped_tex = html.escape(tex_body)
+        
+        # \\[5mm] みたいな改行+余白
+        escaped_tex = re.sub(
+            r"\\\\\[(.*?)\]",
+            lambda m: f'<div style="height:{m.group(1)};"></div>',
+            escaped_tex
+        )
+        
+        # 普通の改行
         escaped_tex = escaped_tex.replace("\\\\", "<br>")
-        html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
