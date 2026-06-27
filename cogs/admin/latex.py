@@ -2,6 +2,7 @@ import asyncio
 import json
 import re
 import shutil
+from playwright.async_api import async_playwright
 from pathlib import Path
 
 import discord
@@ -906,32 +907,29 @@ class Latex(commands.Cog):
             if not tex_body:
                 await ctx.reply("texコードブロックがありません")
                 return
-
-        stem = "image"
-        tex_path = TEMP_LATEX_DIR / f"{stem}.tex"
-        pdf_path = TEMP_LATEX_DIR / f"{stem}.pdf"
-        png_path = TEMP_LATEX_DIR / f"{stem}.png"
-        self._cleanup_temp_latex_files(stem)
-
-        tex_source = IMAGE_TEX_TEMPLATE.replace(IMAGE_TEX_BODY_PLACEHOLDER, tex_body)
-        tex_path.write_text(tex_source, encoding="utf-8")
-
         status_message = await ctx.reply("画像を生成しています...")
-        success, detail = await self._compile_named_pdf(TEMP_LATEX_DIR, stem)
-        if not success:
-            await status_message.edit(
-                content=f"画像生成に失敗しました\n```text\n{self._format_error_tail(detail)}\n```"
-            )
-            self._cleanup_temp_latex_files(stem)
-            return
-
-        if not pdf_path.exists():
-            await status_message.edit(content="画像生成に失敗しました\n`image.pdf` が見つかりません")
-            self._cleanup_temp_latex_files(stem)
-            return
-
+        
+        png_path = TEMP_LATEX_DIR / "image.png"
+        
         try:
-            rendered = self._render_pdf_to_image(pdf_path, png_path)
+            await self._render_mathjax_to_image(tex_body, png_path)
+        except Exception as exc:
+            await status_message.edit(
+                content=f"画像化に失敗しました\n```text\n{self._format_error_tail(str(exc))}\n```"
+            )
+            return
+        
+        if getattr(ctx, "is_slash", False):
+            await status_message.edit(
+                content="完了しました",
+                attachments=[discord.File(png_path)]
+            )
+        else:
+            await status_message.edit(content="完了しました")
+            await ctx.reply(file=discord.File(png_path))
+        
+        if png_path.exists():
+            png_path.unlink()
         except Exception as exc:
             await status_message.edit(
                 content=f"画像化に失敗しました\n```text\n{self._format_error_tail(str(exc))}\n```"
@@ -1181,6 +1179,66 @@ class Latex(commands.Cog):
             )
         except FileNotFoundError:
             return False, "lualatex が見つかりません"
+    
+    async def _render_mathjax_to_image(
+        self,
+        tex_body: str,
+        output_path: Path,
+    ) -> Path:
+        html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <meta charset="UTF-8">
+    <script>
+    window.MathJax = {{
+      tex: {{
+        inlineMath: [['$', '$'], ['\\\\(', '\\\\)']]
+      }}
+    }};
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <style>
+    body {{
+        background: white;
+        padding: 20px;
+        font-size: 32px;
+    }}
+    #math {{
+        display: inline-block;
+    }}
+    </style>
+    </head>
+    <body>
+    <div id="math">
+    $$
+    {tex_body}
+    $$
+    </div>
+    </body>
+    </html>
+    """
+    
+        html_path = TEMP_LATEX_DIR / "mathjax.html"
+        html_path.write_text(html, encoding="utf-8")
+    
+        async with async_playwright() as p:
+            browser = await p.chromium.launch()
+            page = await browser.new_page()
+    
+            await page.goto(f"file://{html_path.resolve()}")
+            await page.wait_for_timeout(1000)
+    
+            element = page.locator("#math")
+            await element.screenshot(path=str(output_path))
+    
+            await browser.close()
+    
+        if html_path.exists():
+            html_path.unlink()
+    
+        return output_path
+
 
         lua_stdout, _ = await lua_command.communicate()
         lua_text = lua_stdout.decode("utf-8", errors="replace")
