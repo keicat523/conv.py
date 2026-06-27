@@ -1194,14 +1194,23 @@ class Latex(commands.Cog):
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
     <style>
-    body {{
+    body {
         background: white;
         padding: 20px;
         font-size: 32px;
-    }}
-    #math {{
+        font-family:
+            "Noto Sans CJK JP",
+            "Noto Serif CJK JP",
+            "IPAexGothic",
+            "IPAGothic",
+            sans-serif;
+    }
+    #math {
         display: inline-block;
-    }}
+    }
+    mjx-container {
+        font-size: 120% !important;
+    }
     </style>
     </head>
     <body>
