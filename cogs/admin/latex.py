@@ -1300,7 +1300,10 @@ class Latex(commands.Cog):
       }},
       options: {{
         skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
-      }}
+      }},
+      startup: {
+        typeset: false
+      }
     }};
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
@@ -1414,7 +1417,12 @@ class Latex(commands.Cog):
             page = await browser.new_page()
     
             await page.set_content(html_content)
-            await page.wait_for_timeout(1500)
+            await page.wait_for_load_state("networkidle")
+            await page.evaluate("""
+                MathJax.typesetPromise(
+                    [document.getElementById('math')]
+                )
+            """)
     
             element = page.locator("body")
             await element.screenshot(path=str(output_path))
