@@ -1176,7 +1176,8 @@ class Latex(commands.Cog):
         tex_body: str,
         output_path: Path,
     ) -> Path:
-        html = f"""
+        escaped_tex = html.escape(tex_body)
+        html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
@@ -1215,20 +1216,20 @@ class Latex(commands.Cog):
     </head>
     <body>
     <div id="math">
-    {html.escape(tex_body)}
+    {escaped_tex}
     </div>
     </body>
     </html>
     """
     
         html_path = TEMP_LATEX_DIR / "mathjax.html"
-        html_path.write_text(html, encoding="utf-8")
+        html_path.write_text(html_content, encoding="utf-8")
     
         async with async_playwright() as p:
             browser = await p.chromium.launch(args=["--no-sandbox"])
             page = await browser.new_page()
     
-            await page.set_content(html)
+            await page.set_content(html_content)
             await page.wait_for_timeout(1500)
     
             element = page.locator("#math")
