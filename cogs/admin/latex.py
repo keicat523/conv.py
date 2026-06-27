@@ -1369,7 +1369,7 @@ class Latex(commands.Cog):
     
     .inline-math {{
         display: inline-block;
-        margin: 0 0.5em;
+        margin: 0 0.25em;
     }}
 
     #math {{
@@ -1437,7 +1437,12 @@ class Latex(commands.Cog):
         width: auto !important;
         margin: 0 !important;
         font-size: 90% !important;
+        font-weight: normal !important;
     }}
+    mjx-container svg {
+        stroke-width: 0 !important;
+    }
+
     
     /* 日本語本文だけ少し大きく見せる */
     #math {{
