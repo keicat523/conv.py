@@ -1365,6 +1365,7 @@ class Latex(commands.Cog):
             "IPAMincho",
             "Yu Mincho",
             sans-serif;
+            font-weight: 500;
     }}
     
     .inline-math {{
