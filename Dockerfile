@@ -1,6 +1,12 @@
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y \
+    texlive-luatex \
+    texlive-lang-japanese \
+    texlive-latex-extra \
+    poppler-utils \
+    fonts-noto-cjk \
+    fonts-ipafont-gothic \
     wget \
     gnupg \
     libnss3 \
