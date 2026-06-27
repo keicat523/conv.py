@@ -930,12 +930,7 @@ class Latex(commands.Cog):
         
         if png_path.exists():
             png_path.unlink()
-        except Exception as exc:
-            await status_message.edit(
-                content=f"画像化に失敗しました\n```text\n{self._format_error_tail(str(exc))}\n```"
-            )
-            self._cleanup_temp_latex_files(stem)
-            return
+
 
         if getattr(ctx, "is_slash", False):
             await status_message.edit(content="完了しました", attachments=[discord.File(rendered)])
