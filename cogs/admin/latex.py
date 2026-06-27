@@ -1242,7 +1242,8 @@ class Latex(commands.Cog):
         tex_body: str,
         output_path: Path,
     ) -> Path:
-                
+        # enumerateだけ変換
+        processed_tex = self._convert_enumerate(tex_body)
         # HTML escape
         escaped_tex = html.escape(processed_tex)
         
