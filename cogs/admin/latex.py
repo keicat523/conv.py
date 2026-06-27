@@ -890,7 +890,7 @@ class Latex(commands.Cog):
         await ctx.reply(f"`{project_name}` を削除しました")
 
     async def _latex_image(self, ctx: commands.Context, payload: str) -> None:
-        if convert_from_path is None or Image is None or ImageChops is None:
+        if Image is None or ImageChops is None:
             await ctx.reply("`tex image` には `pdf2image` と `Pillow` のインストールが必要です")
             return
 
