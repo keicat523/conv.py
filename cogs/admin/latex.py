@@ -36,7 +36,8 @@ LATEX_LINEBREAK_DIMENSION_RE = re.compile(
 )
 DEFAULT_TEX = "\n".join(
     [
-        "\\documentclass{ltjsarticle}",
+        "\\documentclass[varwidth,border=3pt]{standalone}",
+        "\\usepackage{luatexja}",
         "\\usepackage{amsmath,mathtools,amssymb}",
         "\\begin{document}",
         "",
@@ -46,9 +47,9 @@ DEFAULT_TEX = "\n".join(
 )
 IMAGE_TEX_TEMPLATE = "\n".join(
     [
-        "\\documentclass[preview,border=3pt]{ltjsarticle}",
+        "\\documentclass[varwidth,border=3pt]{standalone}",
+        "\\usepackage{luatexja}",
         "\\usepackage{amsmath,mathtools,amssymb}",
-        "\\pagestyle{empty}",
         "\\begin{document}",
         IMAGE_TEX_BODY_PLACEHOLDER,
         "\\end{document}",
