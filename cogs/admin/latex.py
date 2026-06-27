@@ -1244,7 +1244,7 @@ class Latex(commands.Cog):
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
     <style>
-    body {
+    body {{
         margin: 0;
         padding: 20px;
         background: white;
@@ -1257,26 +1257,26 @@ class Latex(commands.Cog):
             "IPAexGothic",
             "IPAGothic",
             sans-serif;
-    }
+    }}
     
-    #math {
+    #math {{
         display: inline-block;
         width: fit-content;
         line-height: 1.6;
-    }
+    }}
     
-    br {
+    br {{
         display: block;
         content: "";
         margin-top: 0.35em;
-    }
+    }}
     
-    mjx-container {
+    mjx-container {{
         display: inline !important;
         width: auto !important;
         margin: 0 !important;
         font-size: 120% !important;
-    }
+    }}
     </style>
     </head>
     <body>
