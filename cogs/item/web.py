@@ -90,8 +90,36 @@ def _file_limit_for_interaction(interaction: discord.Interaction) -> int:
     return DISCORD_SAFE_FILE_LIMIT - 256 * 1024
 
 
+def _is_navigation_evaluate_error(exc: Exception) -> bool:
+    message = str(exc)
+    return (
+        "Execution context was destroyed" in message
+        or "Cannot find context with specified id" in message
+    )
+
+
+async def _evaluate_with_navigation_retry(page, script: str, *args):
+    last_error = None
+    for attempt in range(3):
+        try:
+            return await page.evaluate(script, *args)
+        except Exception as exc:
+            if not _is_navigation_evaluate_error(exc):
+                raise
+            last_error = exc
+            if attempt >= 2:
+                break
+            try:
+                await page.wait_for_load_state("domcontentloaded", timeout=5000)
+            except Exception:
+                pass
+            await page.wait_for_timeout(300)
+    raise last_error
+
+
 async def _expand_wiki_sections(page) -> None:
-    await page.evaluate(
+    await _evaluate_with_navigation_retry(
+        page,
         """
         () => {
             document.querySelectorAll('details:not([open])').forEach((el) => {
@@ -126,6 +154,10 @@ async def _expand_wiki_sections(page) -> None:
         }
         """
     )
+    try:
+        await page.wait_for_load_state("domcontentloaded", timeout=3000)
+    except Exception:
+        pass
     await page.wait_for_timeout(500)
 
 
@@ -148,8 +180,13 @@ async def _google_search(query: str) -> list[dict[str, str]]:
                 await page.goto(search_url, wait_until="networkidle", timeout=30000)
             except Exception:
                 await page.goto(search_url, wait_until="domcontentloaded", timeout=30000)
+            try:
+                await page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                pass
 
-            raw_results = await page.evaluate(
+            raw_results = await _evaluate_with_navigation_retry(
+                page,
                 """
                 () => {
                     const results = [];
@@ -224,7 +261,8 @@ async def _capture_page_parts(url: str, output_dir: Path, file_limit: int) -> li
 
                     await _expand_wiki_sections(page)
 
-                    metrics = await page.evaluate(
+                    metrics = await _evaluate_with_navigation_retry(
+                        page,
                         """
                         () => ({
                             width: Math.ceil(Math.max(
@@ -255,7 +293,11 @@ async def _capture_page_parts(url: str, output_dir: Path, file_limit: int) -> li
                         await page.set_viewport_size(
                             {"width": width, "height": max(1, clip_height)}
                         )
-                        await page.evaluate("(scrollY) => window.scrollTo(0, scrollY)", y)
+                        await _evaluate_with_navigation_retry(
+                            page,
+                            "(scrollY) => window.scrollTo(0, scrollY)",
+                            y,
+                        )
                         await page.wait_for_timeout(150)
                         await page.screenshot(
                             path=str(path),
