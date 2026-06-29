@@ -3,13 +3,16 @@ import math
 import re
 import tempfile
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, quote_plus, urlparse
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 from PIL import Image
 from playwright.async_api import async_playwright
+
+import config
+from utils.timeout_manager import get_menu_timeout_seconds
 
 
 A4_HEIGHT_RATIO = math.sqrt(2)
@@ -18,6 +21,9 @@ SCREENSHOT_WIDTH = 1280
 MIN_SCREENSHOT_WIDTH = 720
 DISCORD_SAFE_FILE_LIMIT = 8 * 1024 * 1024
 MAX_FILES_PER_MESSAGE = 10
+SEARCH_RESULTS_PER_PAGE = 6
+SEARCH_DESCRIPTION_LIMIT = 2000
+SEARCH_RESULT_LIMIT = 30
 
 
 def _is_http_url(value: str) -> bool:
@@ -28,6 +34,46 @@ def _is_http_url(value: str) -> bool:
 def _safe_filename_part(value: str) -> str:
     value = re.sub(r"[^a-zA-Z0-9._-]+", "_", value)
     return value.strip("._")[:40] or "page"
+
+
+def _clean_google_url(value: str) -> str:
+    parsed = urlparse(value)
+    if parsed.netloc.endswith("google.com") and parsed.path == "/url":
+        target = parse_qs(parsed.query).get("q", [""])[0]
+        if target:
+            return target
+    return value
+
+
+def _is_search_result_url(value: str) -> bool:
+    parsed = urlparse(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return False
+
+    blocked_hosts = (
+        "google.com",
+        "www.google.com",
+        "accounts.google.com",
+        "support.google.com",
+        "policies.google.com",
+        "webcache.googleusercontent.com",
+    )
+    return parsed.netloc.lower() not in blocked_hosts
+
+
+def _escape_markdown_link_text(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+
+
+def _safe_markdown_url(value: str) -> str:
+    return value.replace(")", "%29").replace(" ", "%20")
+
+
+def _truncate(value: str, limit: int) -> str:
+    value = re.sub(r"\s+", " ", value).strip()
+    if len(value) <= limit:
+        return value
+    return value[: max(0, limit - 1)].rstrip() + "…"
 
 
 def _file_limit_for(ctx: commands.Context) -> int:
@@ -81,6 +127,77 @@ async def _expand_wiki_sections(page) -> None:
         """
     )
     await page.wait_for_timeout(500)
+
+
+async def _google_search(query: str) -> list[dict[str, str]]:
+    search_url = f"https://www.google.com/search?q={quote_plus(query)}&num={SEARCH_RESULT_LIMIT}&hl=ja"
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        try:
+            context = await browser.new_context(
+                viewport={"width": 1280, "height": 900},
+                locale="ja-JP",
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+            )
+            page = await context.new_page()
+            try:
+                await page.goto(search_url, wait_until="networkidle", timeout=30000)
+            except Exception:
+                await page.goto(search_url, wait_until="domcontentloaded", timeout=30000)
+
+            raw_results = await page.evaluate(
+                """
+                () => {
+                    const results = [];
+                    const seen = new Set();
+                    const blocks = Array.from(document.querySelectorAll('div.g, div[data-sokoban-container], div.MjjYud'));
+
+                    for (const block of blocks) {
+                        const link = block.querySelector('a[href]');
+                        const titleEl = block.querySelector('h3');
+                        if (!link || !titleEl) {
+                            continue;
+                        }
+
+                        const url = link.href || '';
+                        const title = (titleEl.innerText || titleEl.textContent || '').trim();
+                        if (!url || !title || seen.has(url)) {
+                            continue;
+                        }
+
+                        const snippetEl = block.querySelector('.VwiC3b, .IsZvec, [data-sncf], .kb0PBd');
+                        const snippet = snippetEl ? (snippetEl.innerText || snippetEl.textContent || '').trim() : '';
+                        seen.add(url);
+                        results.push({ title, url, snippet });
+                    }
+
+                    return results;
+                }
+                """
+            )
+        finally:
+            await browser.close()
+
+    results: list[dict[str, str]] = []
+    seen_urls: set[str] = set()
+    for item in raw_results:
+        url = _clean_google_url(str(item.get("url", "")))
+        if not _is_search_result_url(url) or url in seen_urls:
+            continue
+        title = _truncate(str(item.get("title", "")), 120)
+        snippet = _truncate(str(item.get("snippet", "")), 240)
+        if not title:
+            continue
+        seen_urls.add(url)
+        results.append({"title": title, "url": url, "snippet": snippet})
+        if len(results) >= SEARCH_RESULT_LIMIT:
+            break
+
+    return results
 
 
 async def _capture_page_parts(url: str, output_dir: Path, file_limit: int) -> list[Path]:
@@ -283,6 +400,245 @@ class Web(commands.Cog):
                 )
                 return
             await interaction.followup.send(f"スクショの作成に失敗しました: `{message[:1800]}`")
+
+
+    def _format_search_result(self, index: int, result: dict[str, str]) -> str:
+        title = _escape_markdown_link_text(result["title"])
+        url = _safe_markdown_url(result["url"])
+        snippet = result.get("snippet") or "No snippet."
+        return f"**{index}. [{title}]({url})**\n{snippet}"
+
+    def _fit_search_result(self, index: int, result: dict[str, str]) -> dict[str, str]:
+        if len(self._format_search_result(index, result)) <= SEARCH_DESCRIPTION_LIMIT:
+            return result
+
+        fitted = {**result, "snippet": _truncate(result.get("snippet", ""), 140)}
+        if len(self._format_search_result(index, fitted)) <= SEARCH_DESCRIPTION_LIMIT:
+            return fitted
+
+        fitted["snippet"] = ""
+        fitted["title"] = _truncate(fitted["title"], 80)
+        return fitted
+
+    def _build_search_pages(self, query: str, results: list[dict[str, str]]) -> list[discord.Embed]:
+        pages: list[list[tuple[int, dict[str, str]]]] = []
+        current: list[tuple[int, dict[str, str]]] = []
+        current_len = 0
+
+        for index, result in enumerate(results, start=1):
+            result = self._fit_search_result(index, result)
+            line = self._format_search_result(index, result)
+            line_len = len(line) + (2 if current else 0)
+            if current and (
+                len(current) >= SEARCH_RESULTS_PER_PAGE
+                or current_len + line_len > SEARCH_DESCRIPTION_LIMIT
+            ):
+                pages.append(current)
+                current = []
+                current_len = 0
+
+            current.append((index, result))
+            current_len += len(line) + (2 if current_len else 0)
+
+        if current:
+            pages.append(current)
+
+        embeds: list[discord.Embed] = []
+        total = len(pages)
+        for page_index, page_results in enumerate(pages, start=1):
+            description = "\n\n".join(
+                self._format_search_result(index, result)
+                for index, result in page_results
+            )
+            embed = discord.Embed(
+                title=f"Google Search: {query}",
+                description=description[:SEARCH_DESCRIPTION_LIMIT],
+                color=discord.Color.blue(),
+            )
+            embed.set_footer(text=f"Page {page_index}/{total}")
+            embeds.append(embed)
+        return embeds
+
+    async def _clear_search_reactions(self, msg: discord.Message) -> None:
+        try:
+            await msg.clear_reactions()
+        except Exception:
+            for emoji in (
+                config.FIRST_EMOJI,
+                config.PREV_EMOJI,
+                config.NEXT_EMOJI,
+                config.LAST_EMOJI,
+            ):
+                try:
+                    await msg.clear_reaction(emoji)
+                except Exception:
+                    pass
+
+    async def _send_search_menu(
+        self,
+        ctx: commands.Context,
+        query: str,
+        results: list[dict[str, str]],
+    ) -> None:
+        if not results:
+            await ctx.reply("検索結果が見つかりませんでした。")
+            return
+
+        pages = self._build_search_pages(query, results)
+        index = 0
+        msg = await ctx.reply(embed=pages[index])
+
+        if len(pages) <= 1:
+            return
+
+        for emoji in (
+            config.FIRST_EMOJI,
+            config.PREV_EMOJI,
+            config.NEXT_EMOJI,
+            config.LAST_EMOJI,
+        ):
+            await msg.add_reaction(emoji)
+
+        def check(reaction, user):
+            return (
+                user == ctx.author
+                and reaction.message.id == msg.id
+                and str(reaction.emoji) in {
+                    config.FIRST_EMOJI,
+                    config.PREV_EMOJI,
+                    config.NEXT_EMOJI,
+                    config.LAST_EMOJI,
+                }
+            )
+
+        while True:
+            try:
+                reaction, user = await self.bot.wait_for(
+                    "reaction_add",
+                    timeout=get_menu_timeout_seconds(),
+                    check=check,
+                )
+            except TimeoutError:
+                await self._clear_search_reactions(msg)
+                break
+            except Exception:
+                break
+
+            try:
+                await msg.remove_reaction(reaction, user)
+            except Exception:
+                pass
+
+            if str(reaction.emoji) == config.FIRST_EMOJI:
+                index = 0
+            elif str(reaction.emoji) == config.LAST_EMOJI:
+                index = len(pages) - 1
+            elif str(reaction.emoji) == config.NEXT_EMOJI:
+                index = (index + 1) % len(pages)
+            else:
+                index = (index - 1) % len(pages)
+
+            await msg.edit(embed=pages[index])
+
+    @web.command(name="search")
+    async def web_search(self, ctx: commands.Context, *terms: str):
+        query = " ".join(terms).strip()
+        if not query:
+            await ctx.reply("検索語がありません。使い方: `c!web search <s1> <s2> ...`")
+            return
+
+        await ctx.reply("Googleで検索しています...")
+        try:
+            results = await _google_search(query)
+        except Exception as exc:
+            await ctx.send(f"検索に失敗しました: `{str(exc)[:1800]}`")
+            return
+
+        await self._send_search_menu(ctx, query, results)
+
+    async def _send_search_menu_interaction(
+        self,
+        interaction: discord.Interaction,
+        query: str,
+        results: list[dict[str, str]],
+    ) -> None:
+        if not results:
+            await interaction.followup.send("検索結果が見つかりませんでした。")
+            return
+
+        pages = self._build_search_pages(query, results)
+        index = 0
+        msg = await interaction.followup.send(embed=pages[index], wait=True)
+
+        if len(pages) <= 1:
+            return
+
+        for emoji in (
+            config.FIRST_EMOJI,
+            config.PREV_EMOJI,
+            config.NEXT_EMOJI,
+            config.LAST_EMOJI,
+        ):
+            await msg.add_reaction(emoji)
+
+        def check(reaction, user):
+            return (
+                user == interaction.user
+                and reaction.message.id == msg.id
+                and str(reaction.emoji) in {
+                    config.FIRST_EMOJI,
+                    config.PREV_EMOJI,
+                    config.NEXT_EMOJI,
+                    config.LAST_EMOJI,
+                }
+            )
+
+        while True:
+            try:
+                reaction, user = await self.bot.wait_for(
+                    "reaction_add",
+                    timeout=get_menu_timeout_seconds(),
+                    check=check,
+                )
+            except TimeoutError:
+                await self._clear_search_reactions(msg)
+                break
+            except Exception:
+                break
+
+            try:
+                await msg.remove_reaction(reaction, user)
+            except Exception:
+                pass
+
+            if str(reaction.emoji) == config.FIRST_EMOJI:
+                index = 0
+            elif str(reaction.emoji) == config.LAST_EMOJI:
+                index = len(pages) - 1
+            elif str(reaction.emoji) == config.NEXT_EMOJI:
+                index = (index + 1) % len(pages)
+            else:
+                index = (index - 1) % len(pages)
+
+            await msg.edit(embed=pages[index])
+
+    @web_slash.command(name="search", description="Google検索結果をEmbedメニューで表示します")
+    @app_commands.describe(query="Googleで検索する語句")
+    async def web_search_slash(self, interaction: discord.Interaction, query: str):
+        query = query.strip()
+        if not query:
+            await interaction.response.send_message("検索語がありません。", ephemeral=True)
+            return
+
+        await interaction.response.defer(thinking=True)
+        await interaction.followup.send("Googleで検索しています...")
+        try:
+            results = await _google_search(query)
+        except Exception as exc:
+            await interaction.followup.send(f"検索に失敗しました: `{str(exc)[:1800]}`")
+            return
+
+        await self._send_search_menu_interaction(interaction, query, results)
 
 
 async def setup(bot):
