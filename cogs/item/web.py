@@ -135,13 +135,18 @@ async def _capture_page_parts(url: str, output_dir: Path, file_limit: int) -> li
                     while y < total_height:
                         clip_height = min(page_height, total_height - y)
                         path = output_dir / f"web_{url_part}_{part:02d}.jpg"
+                        await page.set_viewport_size(
+                            {"width": width, "height": max(1, clip_height)}
+                        )
+                        await page.evaluate("(scrollY) => window.scrollTo(0, scrollY)", y)
+                        await page.wait_for_timeout(150)
                         await page.screenshot(
                             path=str(path),
                             type="jpeg",
                             quality=82,
                             clip={
                                 "x": 0,
-                                "y": y,
+                                "y": 0,
                                 "width": capture_width,
                                 "height": clip_height,
                             },
