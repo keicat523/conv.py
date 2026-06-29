@@ -38,6 +38,11 @@ def _safe_filename_part(value: str) -> str:
 
 def _clean_google_url(value: str) -> str:
     parsed = urlparse(value)
+    if not parsed.netloc and parsed.path.startswith("/url"):
+        target = parse_qs(parsed.query).get("q", [""])[0]
+        if target:
+            return target
+
     if parsed.netloc.endswith("google.com") and parsed.path == "/url":
         target = parse_qs(parsed.query).get("q", [""])[0]
         if target:
@@ -162,7 +167,7 @@ async def _expand_wiki_sections(page) -> None:
 
 
 async def _google_search(query: str) -> list[dict[str, str]]:
-    search_url = f"https://www.google.com/search?q={quote_plus(query)}&num={SEARCH_RESULT_LIMIT}&hl=ja"
+    search_url = f"https://www.google.com/search?q={quote_plus(query)}&num={SEARCH_RESULT_LIMIT}&hl=ja&udm=14"
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         try:
@@ -191,25 +196,69 @@ async def _google_search(query: str) -> list[dict[str, str]]:
                 () => {
                     const results = [];
                     const seen = new Set();
-                    const blocks = Array.from(document.querySelectorAll('div.g, div[data-sokoban-container], div.MjjYud'));
 
-                    for (const block of blocks) {
-                        const link = block.querySelector('a[href]');
-                        const titleEl = block.querySelector('h3');
-                        if (!link || !titleEl) {
-                            continue;
+                    const cleanText = (value) => (value || '').replace(/\\s+/g, ' ').trim();
+
+                    const findContainer = (el) => {
+                        let node = el;
+                        for (let i = 0; i < 6 && node; i += 1) {
+                            const text = cleanText(node.innerText || node.textContent || '');
+                            if (text.length > 80) {
+                                return node;
+                            }
+                            node = node.parentElement;
+                        }
+                        return el.parentElement || el;
+                    };
+
+                    const findSnippet = (container, title) => {
+                        const preferred = container.querySelector(
+                            '.VwiC3b, .IsZvec, [data-sncf], .kb0PBd, .aCOpRe, .st'
+                        );
+                        if (preferred) {
+                            return cleanText(preferred.innerText || preferred.textContent || '');
                         }
 
-                        const url = link.href || '';
-                        const title = (titleEl.innerText || titleEl.textContent || '').trim();
+                        const text = cleanText(container.innerText || container.textContent || '');
+                        if (!text) {
+                            return '';
+                        }
+                        return cleanText(text.replace(title, ''));
+                    };
+
+                    const titleLinks = Array.from(document.querySelectorAll('a[href]'))
+                        .map((link) => ({ link, titleEl: link.querySelector('h3') }))
+                        .filter((entry) => entry.titleEl);
+
+                    for (const { link, titleEl } of titleLinks) {
+                        const url = link.href || link.getAttribute('href') || '';
+                        const title = cleanText(titleEl.innerText || titleEl.textContent || '');
                         if (!url || !title || seen.has(url)) {
                             continue;
                         }
 
-                        const snippetEl = block.querySelector('.VwiC3b, .IsZvec, [data-sncf], .kb0PBd');
-                        const snippet = snippetEl ? (snippetEl.innerText || snippetEl.textContent || '').trim() : '';
+                        const container = findContainer(link);
+                        const snippet = findSnippet(container, title);
                         seen.add(url);
                         results.push({ title, url, snippet });
+                    }
+
+                    if (results.length > 0) {
+                        return results;
+                    }
+
+                    const fallbackLinks = Array.from(document.querySelectorAll('a[href]'));
+                    for (const link of fallbackLinks) {
+                        const url = link.href || link.getAttribute('href') || '';
+                        const text = cleanText(link.innerText || link.textContent || '');
+                        if (!url || !text || text.length < 3 || seen.has(url)) {
+                            continue;
+                        }
+                        seen.add(url);
+                        results.push({ title: text, url, snippet: '' });
+                        if (results.length >= 40) {
+                            break;
+                        }
                     }
 
                     return results;
