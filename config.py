@@ -24,6 +24,8 @@ TIMEOUT_EXEMPT_COMMANDS = [
     "execute",
     "exe",
     "quiz",
+    "web",
+    "open",
     *MENU_TIMEOUT_EXEMPT_COMMANDS,
 ]
 
