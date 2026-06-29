@@ -1489,11 +1489,6 @@ class Latex(commands.Cog):
                 ]);
             }}
             """)
-                                    
-            print(await page.content())  # デバッグ
-            print(await page.evaluate("typeof MathJax"))
-    
-
             
             await page.wait_for_load_state("networkidle")
     
