@@ -3,13 +3,16 @@ import math
 import re
 import tempfile
 from pathlib import Path
-from urllib.parse import parse_qs, quote_plus, urlparse
+from urllib.parse import parse_qs, quote_plus, unquote, urlparse
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 from PIL import Image
-from playwright.async_api import async_playwright
+try:
+    from playwright.async_api import async_playwright
+except ModuleNotFoundError:
+    async_playwright = None
 
 import config
 from utils.timeout_manager import get_menu_timeout_seconds
@@ -50,20 +53,71 @@ def _clean_google_url(value: str) -> str:
     return value
 
 
+def _clean_search_url(value: str) -> str:
+    value = _clean_google_url(value)
+    parsed = urlparse(value)
+    host = parsed.netloc.lower()
+    if host.endswith("duckduckgo.com") and parsed.path.startswith("/l/"):
+        target = parse_qs(parsed.query).get("uddg", [""])[0]
+        if target:
+            return unquote(target)
+    if host.endswith("bing.com") and parsed.path.startswith("/ck/a"):
+        query = parse_qs(parsed.query)
+        target = query.get("u", [""])[0] or query.get("url", [""])[0]
+        if target:
+            if target.startswith("a1"):
+                target = target[2:]
+            try:
+                import base64
+
+                padding = "=" * (-len(target) % 4)
+                decoded = base64.urlsafe_b64decode(target + padding).decode(
+                    "utf-8",
+                    errors="ignore",
+                )
+                if decoded.startswith(("http://", "https://")):
+                    return decoded
+            except Exception:
+                pass
+            return unquote(target)
+    return value
+
+
 def _is_search_result_url(value: str) -> bool:
     parsed = urlparse(value)
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         return False
 
-    blocked_hosts = (
+    host = parsed.netloc.lower()
+    blocked_host_suffixes = (
         "google.com",
-        "www.google.com",
-        "accounts.google.com",
-        "support.google.com",
-        "policies.google.com",
-        "webcache.googleusercontent.com",
+        "google.co.jp",
+        "googleusercontent.com",
+        "gstatic.com",
+        "duckduckgo.com",
+        "bing.com",
+        "microsoft.com",
     )
-    return parsed.netloc.lower() not in blocked_hosts
+    return not any(host == suffix or host.endswith(f".{suffix}") for suffix in blocked_host_suffixes)
+
+
+def _normalize_search_results(raw_results) -> list[dict[str, str]]:
+    results: list[dict[str, str]] = []
+    seen_urls: set[str] = set()
+    for item in raw_results or []:
+        url = _clean_search_url(str(item.get("url", "")))
+        if not _is_search_result_url(url) or url in seen_urls:
+            continue
+        title = _truncate(str(item.get("title", "")), 120)
+        snippet = _truncate(str(item.get("snippet", "")), 240)
+        if not title:
+            continue
+        seen_urls.add(url)
+        results.append({"title": title, "url": url, "snippet": snippet})
+        if len(results) >= SEARCH_RESULT_LIMIT:
+            break
+
+    return results
 
 
 def _escape_markdown_link_text(value: str) -> str:
@@ -166,14 +220,21 @@ async def _expand_wiki_sections(page) -> None:
     await page.wait_for_timeout(500)
 
 
+def _require_playwright() -> None:
+    if async_playwright is None:
+        raise ModuleNotFoundError("No module named 'playwright'")
+
+
 async def _google_search(query: str) -> list[dict[str, str]]:
+    _require_playwright()
     search_url = f"https://www.google.com/search?q={quote_plus(query)}&num={SEARCH_RESULT_LIMIT}&hl=ja&udm=14"
     async with async_playwright() as p:
-        browser = await p.chromium.launch()
+        browser = await p.chromium.launch(args=["--no-sandbox"])
         try:
             context = await browser.new_context(
                 viewport={"width": 1280, "height": 900},
                 locale="ja-JP",
+                ignore_https_errors=True,
                 user_agent=(
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -268,25 +329,143 @@ async def _google_search(query: str) -> list[dict[str, str]]:
         finally:
             await browser.close()
 
-    results: list[dict[str, str]] = []
-    seen_urls: set[str] = set()
-    for item in raw_results:
-        url = _clean_google_url(str(item.get("url", "")))
-        if not _is_search_result_url(url) or url in seen_urls:
-            continue
-        title = _truncate(str(item.get("title", "")), 120)
-        snippet = _truncate(str(item.get("snippet", "")), 240)
-        if not title:
-            continue
-        seen_urls.add(url)
-        results.append({"title": title, "url": url, "snippet": snippet})
-        if len(results) >= SEARCH_RESULT_LIMIT:
-            break
+    return _normalize_search_results(raw_results)
 
-    return results
+
+async def _duckduckgo_search(query: str) -> list[dict[str, str]]:
+    _require_playwright()
+    search_url = f"https://html.duckduckgo.com/html/?q={quote_plus(query)}"
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(args=["--no-sandbox"])
+        try:
+            context = await browser.new_context(
+                viewport={"width": 1280, "height": 900},
+                locale="ja-JP",
+                ignore_https_errors=True,
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+            )
+            page = await context.new_page()
+            try:
+                await page.goto(search_url, wait_until="networkidle", timeout=30000)
+            except Exception:
+                await page.goto(search_url, wait_until="domcontentloaded", timeout=30000)
+            try:
+                await page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                pass
+
+            raw_results = await _evaluate_with_navigation_retry(
+                page,
+                """
+                () => {
+                    const cleanText = (value) => (value || '').replace(/\\s+/g, ' ').trim();
+                    const results = [];
+                    const rows = Array.from(document.querySelectorAll('.result, .web-result'));
+
+                    for (const row of rows) {
+                        const link = row.querySelector('a.result__a, a[href]');
+                        if (!link) {
+                            continue;
+                        }
+                        const title = cleanText(link.innerText || link.textContent || '');
+                        const url = link.href || link.getAttribute('href') || '';
+                        const snippetEl = row.querySelector('.result__snippet, .result__body');
+                        const snippet = snippetEl ? cleanText(snippetEl.innerText || snippetEl.textContent || '') : '';
+                        if (title && url) {
+                            results.push({ title, url, snippet });
+                        }
+                        if (results.length >= 40) {
+                            break;
+                        }
+                    }
+
+                    return results;
+                }
+                """
+            )
+        finally:
+            await browser.close()
+
+    return _normalize_search_results(raw_results)
+
+
+async def _bing_search(query: str) -> list[dict[str, str]]:
+    _require_playwright()
+    search_url = f"https://www.bing.com/search?q={quote_plus(query)}&count={SEARCH_RESULT_LIMIT}&setlang=ja-JP"
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(args=["--no-sandbox"])
+        try:
+            context = await browser.new_context(
+                viewport={"width": 1280, "height": 900},
+                locale="ja-JP",
+                ignore_https_errors=True,
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+            )
+            page = await context.new_page()
+            try:
+                await page.goto(search_url, wait_until="networkidle", timeout=30000)
+            except Exception:
+                await page.goto(search_url, wait_until="domcontentloaded", timeout=30000)
+            try:
+                await page.wait_for_load_state("networkidle", timeout=5000)
+            except Exception:
+                pass
+
+            raw_results = await _evaluate_with_navigation_retry(
+                page,
+                """
+                () => {
+                    const cleanText = (value) => (value || '').replace(/\\s+/g, ' ').trim();
+                    const results = [];
+                    const rows = Array.from(document.querySelectorAll('li.b_algo, .b_algo'));
+
+                    for (const row of rows) {
+                        const link = row.querySelector('h2 a[href], a[href]');
+                        if (!link) {
+                            continue;
+                        }
+                        const title = cleanText(link.innerText || link.textContent || '');
+                        const url = link.href || link.getAttribute('href') || '';
+                        const snippetEl = row.querySelector('.b_caption p, p, .b_snippet');
+                        const snippet = snippetEl ? cleanText(snippetEl.innerText || snippetEl.textContent || '') : '';
+                        if (title && url) {
+                            results.push({ title, url, snippet });
+                        }
+                        if (results.length >= 40) {
+                            break;
+                        }
+                    }
+
+                    return results;
+                }
+                """
+            )
+        finally:
+            await browser.close()
+
+    return _normalize_search_results(raw_results)
+
+
+async def _web_search_results(query: str) -> list[dict[str, str]]:
+    results = await _google_search(query)
+    if results:
+        return results
+    results = await _bing_search(query)
+    if results:
+        return results
+    return await _duckduckgo_search(query)
 
 
 async def _capture_page_parts(url: str, output_dir: Path, file_limit: int) -> list[Path]:
+    _require_playwright()
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         try:
@@ -444,6 +623,8 @@ class Web(commands.Cog):
                         content=f"web screenshot {page_from}-{page_to}/{total}",
                         files=files,
                     )
+        except ModuleNotFoundError as exc:
+            await ctx.send(f"Web機能に必要なライブラリが見つかりません: `{exc.name or 'playwright'}`")
         except Exception as exc:
             message = str(exc)
             if "Executable doesn't exist" in message or "playwright install" in message:
@@ -483,6 +664,8 @@ class Web(commands.Cog):
                         content=f"web screenshot {page_from}-{page_to}/{total}",
                         files=files,
                     )
+        except ModuleNotFoundError as exc:
+            await interaction.followup.send(f"Web機能に必要なライブラリが見つかりません: `{exc.name or 'playwright'}`")
         except Exception as exc:
             message = str(exc)
             if "Executable doesn't exist" in message or "playwright install" in message:
@@ -542,7 +725,7 @@ class Web(commands.Cog):
                 for index, result in page_results
             )
             embed = discord.Embed(
-                title=f"Google Search: {query}",
+                title=f"Web Search: {query}",
                 description=description[:SEARCH_DESCRIPTION_LIMIT],
                 color=discord.Color.blue(),
             )
@@ -638,9 +821,12 @@ class Web(commands.Cog):
             await ctx.reply("検索語がありません。使い方: `c!web search <s1> <s2> ...`")
             return
 
-        await ctx.reply("Googleで検索しています...")
+        await ctx.reply("Web検索しています...")
         try:
-            results = await _google_search(query)
+            results = await _web_search_results(query)
+        except ModuleNotFoundError as exc:
+            await ctx.send(f"検索に必要なライブラリが見つかりません: `{exc.name or 'playwright'}`")
+            return
         except Exception as exc:
             await ctx.send(f"検索に失敗しました: `{str(exc)[:1800]}`")
             return
@@ -722,9 +908,12 @@ class Web(commands.Cog):
             return
 
         await interaction.response.defer(thinking=True)
-        await interaction.followup.send("Googleで検索しています...")
+        await interaction.followup.send("Web検索しています...")
         try:
-            results = await _google_search(query)
+            results = await _web_search_results(query)
+        except ModuleNotFoundError as exc:
+            await interaction.followup.send(f"検索に必要なライブラリが見つかりません: `{exc.name or 'playwright'}`")
+            return
         except Exception as exc:
             await interaction.followup.send(f"検索に失敗しました: `{str(exc)[:1800]}`")
             return

@@ -31,6 +31,7 @@ TEMP_LATEX_DIR = TEMP_DIR / "latex"
 IMAGE_RENDER_DPI = 100
 IMAGE_MARGIN_CM = 0.9
 IMAGE_TEX_BODY_PLACEHOLDER = "__LATEX_IMAGE_BODY__"
+IMAGE_AUTO_WRAP_FULLWIDTH_CHARS = 52
 LATEX_ACTIONS_TEXT = "list/base/edit/create/copy/delete/image/settings/output/install"
 LATEX_LINEBREAK_DIMENSION_RE = re.compile(
     r"(?<!\\)\\\[\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)\s*(?:pt|mm|cm|in|ex|em|bp|pc|dd|cc|sp))\s*\]"
@@ -1457,9 +1458,13 @@ class Latex(commands.Cog):
     #math {{
         display: inline-block;
         width: max-content;
+        max-width: {IMAGE_AUTO_WRAP_FULLWIDTH_CHARS}em;
         min-width: 0;
         line-height: 1.6;
         white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: normal;
+        line-break: strict;
     }}
     </style>
     </head>
