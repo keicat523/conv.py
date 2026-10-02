@@ -515,7 +515,7 @@ class Quiz(commands.Cog):
                     pass
                 if is_correct:
                     scores[msg.author.id] = scores.get(msg.author.id, 0) + 1
-                    prev_answer = answer
+                    prev_answer = msg.content
                     await asyncio.sleep(0.7)
                     break
 
