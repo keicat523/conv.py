@@ -4,3 +4,4 @@ sympy
 python-dotenv
 flask
 playwright
+antlr4-python3-runtime==4.11.0
