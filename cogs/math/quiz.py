@@ -81,7 +81,9 @@ class Quiz(commands.Cog):
             return
 
         mode_dir = QUIZ_DIR / mode_map[mode_key]
-        setting_map = self._load_json(mode_dir / "setting.json", {})
+        setting_data = self._load_json(mode_dir / "setting.json", {})
+        setting_map = setting_data.get("sets", {})
+        do_sym = setting_data.get("do_sym", [])
         if not setting_map:
             await ctx.reply("setting.json が空です。")
             return
@@ -100,7 +102,12 @@ class Quiz(commands.Cog):
             await ctx.reply("main.json が空です。")
             return
 
-        await self._run_quiz(ctx, questions, quiz_timeout)
+        await self._run_quiz(
+            ctx,
+            questions,
+            quiz_timeout,
+            use_sympy=setting_key in do_sym,
+        )
 
     # ====================
     # Slash /quiz
@@ -390,9 +397,16 @@ class Quiz(commands.Cog):
         src = to_sympy_input(text)
         src = src.replace(" ", "")
         src = _latex_to_sympy_text(src)
+
         try:
-            transformations = standard_transformations + (implicit_multiplication_application,)
-            return parse_expr(src, transformations=transformations, evaluate=False)
+            transformations = standard_transformations + (
+                implicit_multiplication_application,
+            )
+            return parse_expr(
+                src,
+                transformations=transformations,
+                evaluate=False,
+            )
         except Exception:
             return None
 
@@ -424,9 +438,23 @@ class Quiz(commands.Cog):
         except Exception:
             return expr
 
-    def _is_equivalent(self, answer: str, expected: str) -> bool:
+    def _is_equivalent(
+        self,
+        answer: str,
+        expected: str,
+        use_sympy: bool = True,
+    ) -> bool:
+
+        # SymPyを使わない場合
+        if not use_sympy:
+            a_text = _latex_to_sympy_text(to_sympy_input(answer)).replace(" ", "")
+            b_text = _latex_to_sympy_text(to_sympy_input(expected)).replace(" ", "")
+            return a_text == b_text
+
+        # SymPyを使う場合
         a = self._parse_answer(answer)
         b = self._parse_answer(expected)
+
         if a is None or b is None:
             return False
 
@@ -435,6 +463,7 @@ class Quiz(commands.Cog):
 
         ca = self._canonicalize(a)
         cb = self._canonicalize(b)
+
         return sp.srepr(ca) == sp.srepr(cb)
 
     def _is_stop(self, ctx, message: discord.Message) -> bool:
@@ -444,7 +473,13 @@ class Quiz(commands.Cog):
         prefix = (ctx.prefix or "c!").lower()
         return content in (f"{prefix}q stop", f"{prefix}quiz stop")
 
-    async def _run_quiz(self, ctx, questions: dict, quiz_timeout: int):
+    async def _run_quiz(
+        self,
+        ctx,
+        questions: dict,
+        quiz_timeout: int,
+        use_sympy: bool = False,
+    ):
         items = list(questions.values())
         random.shuffle(items)
 
@@ -455,6 +490,12 @@ class Quiz(commands.Cog):
         for item in items:
             question = item.get("q")
             answer = item.get("a")
+
+            question_use_sympy = use_sympy
+
+            if str(item.get("symp", "")).lower() == "false":
+                question_use_sympy = False
+                
             if not question or not answer:
                 continue
 
@@ -495,11 +536,19 @@ class Quiz(commands.Cog):
 
                 if isinstance(answer, list):
                     is_correct = any(
-                        self._is_equivalent(msg.content, ans)
+                        self._is_equivalent(
+                            msg.content,
+                            ans,
+                            use_sympy=question_use_sympy,
+                        )
                         for ans in answer
                     )
                 else:
-                    is_correct = self._is_equivalent(msg.content, answer)
+                    is_correct = self._is_equivalent(
+                        msg.content,
+                        answer,
+                        use_sympy=question_use_sympy,
+                    )
 
                 judge_text = f"{msg.content} : {'○' if is_correct else '×'}"
                 if current_msg:
