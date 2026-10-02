@@ -14,6 +14,7 @@ MENU_TIMEOUT_EXEMPT_COMMANDS = [
     "help",
     "inventory",
     "search",
+    "item_list",
 ]
 
 # 実行時間制限の対象外コマンド名

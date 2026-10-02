@@ -1,6 +1,6 @@
 {
-  "title": "Help - Page 1",
-  "description": "基本コマンド一覧",
+  "title": "Help - 1",
+  "description": "機能コマンド一覧",
   "fields": [
     {
       "label": "c!setprefix",
@@ -21,6 +21,14 @@
     {
       "label": "c!inventory",
       "value": "ユーザーの所持品を確認できます"
+    },
+    {
+      "label": "c!quiz",
+      "value": "問題を出題されます。解答は\\は不要で分数は\/で表します"
+    },
+    {
+      "label": "c!web",
+      "value": "web関連のコマンドを使えます"
     }
   ]
 }

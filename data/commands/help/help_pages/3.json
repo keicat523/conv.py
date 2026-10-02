@@ -1,10 +1,13 @@
 {
-  "title": "Help - Page 3",
-  "description": "コマンド一覧",
+  "title": "Help - 3",
+  "description": "数学用コマンド一覧-1",
   "fields": [
     {
-      "label": "c!null",
-      "value": "no data"
+      "label": "c!latex",
+      "value": "texを用いての作業が出来ます(わんちゃんadmin専用かも)"
     }
   ]
 }
+
+
+

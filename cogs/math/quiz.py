@@ -499,7 +499,14 @@ class Quiz(commands.Cog):
                             pass
                     return
 
-                is_correct = self._is_equivalent(msg.content, answer)
+                if isinstance(answer, list):
+                    is_correct = any(
+                        self._is_equivalent(msg.content, ans)
+                        for ans in answer
+                    )
+                else:
+                    is_correct = self._is_equivalent(msg.content, answer)
+
                 judge_text = f"{msg.content} : {'○' if is_correct else '×'}"
                 if current_msg:
                     try:
