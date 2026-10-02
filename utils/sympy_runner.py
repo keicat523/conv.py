@@ -35,6 +35,64 @@ def _normalize_sympify_text(text: str) -> str:
     return s
 
 
+
+def _latex_to_sympy_text(text: str) -> str:
+    s = str(text)
+
+    # LaTeXの関数
+    s = s.replace(r"\sin", "sin")
+    s = s.replace(r"\cos", "cos")
+    s = s.replace(r"\tan", "tan")
+    s = s.replace(r"\sqrt", "sqrt")
+    s = s.replace(r"\log", "log")
+
+    # Unicode記号
+    s = s.replace("π", "pi")
+    s = s.replace("∞", "oo")
+
+    # 矢印
+    s = s.replace("→", "->")
+
+    # Unicode下付き文字 → _数字
+    subscript_map = str.maketrans({
+        "₀": "_0",
+        "₁": "_1",
+        "₂": "_2",
+        "₃": "_3",
+        "₄": "_4",
+        "₅": "_5",
+        "₆": "_6",
+        "₇": "_7",
+        "₈": "_8",
+        "₉": "_9",
+    })
+    s = s.translate(subscript_map)
+
+    # Unicode上付き文字 → ^数字
+    superscript_map = str.maketrans({
+        "⁰": "^0",
+        "¹": "^1",
+        "²": "^2",
+        "³": "^3",
+        "⁴": "^4",
+        "⁵": "^5",
+        "⁶": "^6",
+        "⁷": "^7",
+        "⁸": "^8",
+        "⁹": "^9",
+    })
+    s = s.translate(superscript_map)
+
+    # LaTeXの {} → ()
+    s = s.replace("{", "(").replace("}", ")")
+
+    # ^ → **
+    s = s.replace("^", "**")
+
+    return s
+
+
+
 def _calc(
     mode: str,
     expr_latex: str,

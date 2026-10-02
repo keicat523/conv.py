@@ -3,6 +3,10 @@ import json
 import random
 import re
 from pathlib import Path
+from utils.pretty import to_sympy_input
+from utils.sympy_runner import _latex_to_sympy_text
+
+
 
 import discord
 from discord import app_commands
@@ -381,21 +385,11 @@ class Quiz(commands.Cog):
             rank += 1
         return "\n".join(lines)
 
-    def _latex_to_sympy_text(self, text: str) -> str:
-        s = text
-        s = s.replace(r"\sin", "sin")
-        s = s.replace(r"\cos", "cos")
-        s = s.replace(r"\tan", "tan")
-        s = s.replace(r"\sqrt", "sqrt")
-        s = s.replace(r"\log", "log")
-        s = s.replace("{", "(").replace("}", ")")
-        s = s.replace("^", "**")
-        return s
 
     def _parse_answer(self, text: str):
         src = to_sympy_input(text)
         src = src.replace(" ", "")
-        src = self._latex_to_sympy_text(src)
+        src = _latex_to_sympy_text(src)
         try:
             transformations = standard_transformations + (implicit_multiplication_application,)
             return parse_expr(src, transformations=transformations, evaluate=False)
