@@ -28,6 +28,7 @@ TIMEOUT_EXEMPT_COMMANDS = [
     "quiz",
     "web",
     "open",
+    "reload",
     *MENU_TIMEOUT_EXEMPT_COMMANDS,
 ]
 
