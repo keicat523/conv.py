@@ -194,26 +194,52 @@ class Reload(commands.Cog):
     def build_result_embed(self, success, failed):
         embed = discord.Embed(
             title="再読み込み結果",
-            color=discord.Color.green() if not failed else discord.Color.orange()
+            color=(
+                discord.Color.green()
+                if not failed
+                else discord.Color.orange()
+            ),
         )
 
+        def make_text(lines, limit=1000):
+            result = []
+
+            for line in lines:
+                remaining = limit - sum(len(x) + 1 for x in result)
+                if remaining <= 0:
+                    result.append("…以下省略")
+                    break
+
+                if len(line) > remaining:
+                    result.append(line[:max(0, remaining - 6)] + "…省略")
+                    break
+
+                result.append(line)
+
+            return "\n".join(result) or "なし"
+
         if success:
+            lines = [f"`{c}`" for c in success]
             embed.add_field(
-                name="成功",
-                value="\n".join(f"`{c}`" for c in success),
-                inline=False
+                name=f"成功（{len(success)}件）",
+                value=make_text(lines),
+                inline=False,
             )
 
         if failed:
+            lines = [
+                f"`{c}` → `{str(err)[:250]}`"
+                for c, err in failed.items()
+            ]
             embed.add_field(
-                name="失敗",
-                value="\n".join(
-                    f"`{c}` → `{err}`" for c, err in failed.items()
-                ),
-                inline=False
+                name=f"失敗（{len(failed)}件）",
+                value=make_text(lines),
+                inline=False,
             )
 
-        embed.set_footer(text=f"成功: {len(success)} / 失敗: {len(failed)}")
+        embed.set_footer(
+            text=f"成功: {len(success)} / 失敗: {len(failed)}"
+        )
         return embed
 
     # =========================
@@ -307,7 +333,7 @@ class Reload(commands.Cog):
 
         try:
             if module in get_reloadable_cogs():
-                path = await self._update_and_reload(module)
+                path = await _update_and_reload(self, module)
                 return [f"{module} (GitHub更新済み: {path})"], {}
 
             # 許可リスト外は、従来どおりローカルのコードを再読み込み
