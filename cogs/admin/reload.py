@@ -55,7 +55,7 @@ NG_EMOJI = "❌"
 
 
 async def _fetch_github_cog(self, module: str) -> bytes:
-    if module not in self.RELOADABLE_COGS:
+    if module not in get_reloadable_cogs():
         raise ValueError("このCogは更新対象として許可されていません")
 
     owner = os.environ["GITHUB_OWNER"]
@@ -67,7 +67,7 @@ async def _fetch_github_cog(self, module: str) -> bytes:
     relative_path = module.replace(".", "/") + ".py"
 
     url = (
-        f"{self.GITHUB_API}/repos/{owner}/{repo}"
+        f"{GITHUB_API}/repos/{owner}/{repo}"
         f"/contents/{relative_path}"
     )
 
@@ -140,7 +140,7 @@ def _atomic_write(self, path: Path, content: bytes) -> None:
 
 
 async def _update_and_reload(self, module: str):
-    if module in get_reloadable_cogs():
+    if module not in get_reloadable_cogs():
         raise ValueError("GitHubからの更新が許可されていないCogです")
 
     relative_path = module.replace(".", "/") + ".py"
@@ -152,14 +152,14 @@ async def _update_and_reload(self, module: str):
     if not path.is_file():
         raise FileNotFoundError(f"対象ファイルがありません: {relative_path}")
 
-    new_content = await self._fetch_github_cog(module)
+    new_content = await _fetch_github_cog(self, module)
     old_content = path.read_bytes()
 
     try:
         # 先に新しい内容を構文検証
         compile(new_content.decode("utf-8"), str(path), "exec")
 
-        self._atomic_write(path, new_content)
+        _atomic_write(path, new_content)
 
         # 古いバイトコードが使われないようにする
         importlib.invalidate_caches()
@@ -172,7 +172,7 @@ async def _update_and_reload(self, module: str):
     except Exception:
         # 置換後に失敗した場合、ファイルを復元する
         if path.exists():
-            self._atomic_write(path, old_content)
+            _atomic_write(path, new_content)
 
         importlib.invalidate_caches()
         pyc = Path(importlib.util.cache_from_source(str(path)))
@@ -268,10 +268,14 @@ class Reload(commands.Cog):
 
         for cog in self.iter_cogs():
             try:
-                await self.bot.reload_extension(cog)
-                success.append(cog)
+                if cog in get_reloadable_cogs():
+                    path = await self._update_and_reload(cog)
+                    success.append(f"{cog} (GitHub更新済み: {path})")
+                else:
+                    await self.bot.reload_extension(cog)
+                    success.append(cog)
             except Exception as e:
-                failed[cog] = str(e)
+                failed[cog] = f"{type(e).__name__}: {e}"
 
         return success, failed
 
@@ -302,7 +306,7 @@ class Reload(commands.Cog):
         module = f"cogs.{cog}"
 
         try:
-            if module in self.RELOADABLE_COGS:
+            if module in get_reloadable_cogs():
                 path = await self._update_and_reload(module)
                 return [f"{module} (GitHub更新済み: {path})"], {}
 
