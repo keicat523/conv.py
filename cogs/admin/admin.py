@@ -22,7 +22,23 @@ MENTION_RE = re.compile(r"<@!?(\d+)>")
 CODE_BLOCK_RE = re.compile(r"^```(?:py|python)?\s*\n(?P<code>.*?)(?:\n```)?\s*$", re.DOTALL)
 EXECUTE_TIMEOUT_SECONDS = 180
 EXECUTE_MAX_OUTPUT = 1800
-EXECUTE_STOP_WORDS = {"stop", "停止", "とめて", "止めて"}
+EXECUTE_STOP_WORDS = {"stop", "停止", "x"}
+
+import builtins
+import math
+from decimal import Decimal, getcontext
+from typing import Tuple, Optional
+
+ALLOWED_MODULES = {
+    "math": math,
+    "decimal": __import__("decimal"),
+    "typing": __import__("typing"),
+}
+
+def safe_import(name, globals=None, locals=None, fromlist=(), level=0):
+    if level != 0 or name not in ALLOWED_MODULES:
+        raise ImportError(f"Import of '{name}' is not allowed")
+    return ALLOWED_MODULES[name]
 SAFE_EXEC_BUILTINS = {
     "abs": abs,
     "all": all,
@@ -52,6 +68,7 @@ SAFE_EXEC_BUILTINS = {
     "type": type,
     "ValueError": ValueError,
     "zip": zip,
+    "__import__": safe_import,
 }
 FORBIDDEN_EXEC_NAMES = {
     "__import__",
