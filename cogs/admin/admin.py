@@ -33,7 +33,7 @@ ALLOWED_MODULES = {
     "math": math,
     "decimal": __import__("decimal"),
     "typing": __import__("typing"),
-}
+} 
 
 def safe_import(name, globals=None, locals=None, fromlist=(), level=0):
     if level != 0 or name not in ALLOWED_MODULES:
