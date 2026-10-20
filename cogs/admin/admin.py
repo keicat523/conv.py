@@ -343,11 +343,34 @@ class Admin(commands.Cog):
 
         return await self.bot.wait_for("message", check=check)
 
-    async def _reply_execute_output(self, ctx: commands.Context, title: str, output: str) -> None:
-        if len(output) > EXECUTE_MAX_OUTPUT:
-            output = output[-EXECUTE_MAX_OUTPUT:]
-            output = "...(出力が長いため末尾のみ表示)\n" + output
-        await ctx.reply(f"{title}\n```py\n{output}\n```")
+
+    async def _reply_execute_output(
+        self,
+        ctx: commands.Context,
+        title: str,
+        output: str,
+    ) -> None:
+        # Discordの文字数制限に余裕を持たせて分割
+        chunk_size = 1800
+
+        # 空の出力にも対応
+        if not output:
+            output = "実行完了 (出力なし)"
+
+        chunks = [
+            output[i:i + chunk_size]
+            for i in range(0, len(output), chunk_size)
+        ]
+
+        for index, chunk in enumerate(chunks):
+            # 最初のメッセージだけタイトルを付ける
+            if index == 0:
+                message = f"{title}\n```py\n{chunk}\n```"
+            else:
+                message = f"```py\n{chunk}\n```"
+
+            await ctx.reply(message)
+
 
     def _build_admin_list_text(self, ctx: commands.Context) -> str:
         admin_ids = sorted(ADMIN_IDS)
