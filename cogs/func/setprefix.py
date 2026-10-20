@@ -22,7 +22,7 @@ class Prefix(commands.Cog):
     # =========================
     # Prefix 版
     # =========================
-    @commands.command(name="setprefix", aliases=["sp"])
+    @commands.command(name="setprefix", aliases=["sp","spr"])
     async def setprefix(self, ctx, prefix: str):
         ok, msg = await self._set_prefix(ctx.author.id, prefix)
         await ctx.reply(msg)

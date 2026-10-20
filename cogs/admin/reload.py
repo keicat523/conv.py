@@ -109,10 +109,12 @@ async def _fetch_github_cog(module: str) -> bytes:
     if actual_sha != data.get("sha"):
         raise ValueError("Git blob SHAの検証に失敗しました")
 
-    # UTF-8とPython構文を検証する
-    source = content.decode("utf-8")
+    # UTF-8 BOM があっても正常に読み込めるようにする
+    source = content.decode("utf-8-sig")
     ast.parse(source, filename=relative_path)
 
+    # BOM を取り除いた内容を返す
+    content = source.encode("utf-8")
     return content
 
 
