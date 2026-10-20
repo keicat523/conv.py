@@ -17,11 +17,34 @@ import aiohttp
 # プロジェクトのルートディレクトリ
 ROOT_DIR = Path(__file__).resolve().parents[2]
 
-# GitHubから取得してよいCogを明示的に指定する
-RELOADABLE_COGS = {
-    "cogs.admin.admin",
-    "cogs.math.diff",
-}
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+COGS_DIR = ROOT_DIR / "cogs"
+
+
+def get_reloadable_cogs() -> set[str]:
+    """cogs フォルダ内の Python モジュール名を自動取得する。"""
+    result = set()
+
+    for path in COGS_DIR.rglob("*.py"):
+        # __init__.py は除外
+        if path.name == "__init__.py":
+            continue
+
+        # __pycache__ 以下は除外
+        if "__pycache__" in path.parts:
+            continue
+
+        # ファイルパスからモジュール名を作る
+        relative = path.relative_to(ROOT_DIR).with_suffix("")
+        module = ".".join(relative.parts)
+
+        result.add(module)
+
+    return result
+
+
 
 MAX_COG_SIZE = 200_000
 GITHUB_API = "https://api.github.com"
@@ -117,7 +140,7 @@ def _atomic_write(self, path: Path, content: bytes) -> None:
 
 
 async def _update_and_reload(self, module: str):
-    if module not in self.RELOADABLE_COGS:
+    if module in get_reloadable_cogs():
         raise ValueError("GitHubからの更新が許可されていないCogです")
 
     relative_path = module.replace(".", "/") + ".py"
