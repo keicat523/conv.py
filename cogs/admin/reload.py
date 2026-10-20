@@ -314,16 +314,23 @@ class Reload(commands.Cog):
         success = []
         failed = {}
 
-        modules = self.iter_cogs_in_folder(folder)
+        modules = sorted(self.iter_cogs_in_folder(folder))
         if not modules:
             return [], {folder: "フォルダが見つかりません"}
 
         for cog in modules:
             try:
-                await self.bot.reload_extension(cog)
-                success.append(cog)
+                if cog in get_reloadable_cogs():
+                    path = await _update_and_reload(self, cog)
+                    success.append(
+                        f"{cog} (GitHub更新済み: {path})"
+                    )
+                else:
+                    await self.bot.reload_extension(cog)
+                    success.append(cog)
+
             except Exception as e:
-                failed[cog] = str(e)
+                failed[cog] = f"{type(e).__name__}: {e}"
 
         return success, failed
 
