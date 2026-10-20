@@ -1192,14 +1192,16 @@ class Latex(commands.Cog):
         def save_inline(m):
             inline_blocks.append(m.group(1))
             return f"@@INLINE{len(inline_blocks)-1}@@"
-    
+
+
         text = re.sub(
             r"\$(.*?)\$",
             save_inline,
             text,
             flags=re.S
         )
-    
+        # 数式を退避した後、通常本文だけHTMLエスケープ
+        text = html.escape(text)
         # \\[5mm]
         text = re.sub(
             r"\\\\\[(.*?)\]",
@@ -1286,8 +1288,10 @@ class Latex(commands.Cog):
     ) -> Path:
         # enumerateだけ変換
         processed_tex = self._convert_enumerate(tex_body)
-        # HTML escape
+       # LaTeXの変換
         processed_tex = self._convert_latex_breaks(processed_tex)
+
+        # 数式部分は退避済みのため、通常の本文だけHTMLエスケープする
         escaped_tex = processed_tex
                 
         escaped_tex = escaped_tex.replace("&lt;br&gt;", "<br>")

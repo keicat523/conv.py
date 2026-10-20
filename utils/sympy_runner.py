@@ -19,6 +19,7 @@ def _normalize_latex_expr(text: str) -> str:
     s = re.sub(r"(?<!\\)\btan\b", r"\\tan", s)
     s = re.sub(r"(?<!\\)\bsqrt\b", r"\\sqrt", s)
     s = re.sub(r"(?<!\\)\blog\b", r"\\log", s)
+    s = re.sub(r"(?<!\\)\bfrac\b", r"\\frac", s)
     return s
 
 
