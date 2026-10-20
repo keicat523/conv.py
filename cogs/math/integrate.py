@@ -96,6 +96,7 @@ class Integrate(commands.Cog):
         var_name: str | None = None,
         bounds: tuple[str, str] | None = None,
     ) -> str:
+        print("積分に渡す式:", repr(latex_expr))
         result = await run_sympy_local(
             mode="integrate",
             expr=latex_expr,

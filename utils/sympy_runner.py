@@ -101,13 +101,6 @@ def _calc(
     bounds: tuple[str, str] | None = None,
     at_value: str | None = None,
 ):
-    print("① 元の入力:", repr(expr_latex))
-
-    normalized = _normalize_latex_expr(expr_latex)
-    print("② 正規化後:", repr(normalized))
-
-    expr = parse_latex(normalized)
-    print("③ SymPy解析結果:", expr)
     expr = parse_latex(_normalize_latex_expr(expr_latex))
 
     if mode == "calc":
