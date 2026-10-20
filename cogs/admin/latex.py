@@ -1231,18 +1231,18 @@ class Latex(commands.Cog):
         # 普通の改行
         text = text.replace(r"\\", "<br>")
     
-        # inline math 復元（←ここ重要）
+        # inline math 復元
         for i, content in enumerate(inline_blocks):
             text = text.replace(
                 f"@@INLINE{i}@@",
-            f"<span class='inline-math'>\\({content}\\)</span>"
+                f"<span class='inline-math'>\\({html.escape(content, quote=False)}\\)</span>"
             )
     
         # display math 復元
         for i, content in enumerate(display_blocks):
             text = text.replace(
                 f"@@DISPLAY{i}@@",
-                f"<div class='display-math'>$${content}$$</div>"
+                f"<div class='display-math'>$${html.escape(content, quote=False)}$$</div>"
             )
         return text
 
