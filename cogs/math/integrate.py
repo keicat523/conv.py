@@ -13,7 +13,7 @@ class Integrate(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="integrate", aliases=["int","intg"])
+    @commands.command(name="integrate", aliases=["int"])
     async def integrate_cmd(self, ctx, *, text: str | None = None):
         if not text:
             await ctx.reply("使用例: `c!integrate $式$ [変数] [下限] [上限]`")
