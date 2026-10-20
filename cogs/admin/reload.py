@@ -54,7 +54,7 @@ OK_EMOJI = "✅"
 NG_EMOJI = "❌"
 
 
-async def _fetch_github_cog(self, module: str) -> bytes:
+async def _fetch_github_cog(module: str) -> bytes:
     if module not in get_reloadable_cogs():
         raise ValueError("このCogは更新対象として許可されていません")
 
@@ -117,7 +117,7 @@ async def _fetch_github_cog(self, module: str) -> bytes:
 
 
 
-def _atomic_write(self, path: Path, content: bytes) -> None:
+def _atomic_write(path: Path, content: bytes) -> None:
     temp_name = None
 
     try:
@@ -152,7 +152,7 @@ async def _update_and_reload(self, module: str):
     if not path.is_file():
         raise FileNotFoundError(f"対象ファイルがありません: {relative_path}")
 
-    new_content = await _fetch_github_cog(self, module)
+    new_content = await _fetch_github_cog(module)
     old_content = path.read_bytes()
 
     try:
@@ -172,7 +172,7 @@ async def _update_and_reload(self, module: str):
     except Exception:
         # 置換後に失敗した場合、ファイルを復元する
         if path.exists():
-            _atomic_write(path, new_content)
+            _atomic_write(path, old_content)
 
         importlib.invalidate_caches()
         pyc = Path(importlib.util.cache_from_source(str(path)))
@@ -295,7 +295,7 @@ class Reload(commands.Cog):
         for cog in self.iter_cogs():
             try:
                 if cog in get_reloadable_cogs():
-                    path = await self._update_and_reload(cog)
+                    path = await _update_and_reload(self, cog)
                     success.append(f"{cog} (GitHub更新済み: {path})")
                 else:
                     await self.bot.reload_extension(cog)
