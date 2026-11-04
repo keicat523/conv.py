@@ -41,6 +41,8 @@ DEFAULT_TEX = "\n".join(
         "\\documentclass[varwidth,border=3pt]{standalone}",
         "\\usepackage{luatexja}",
         "\\usepackage{amsmath,mathtools,amssymb}",
+        "\\usepackage{xfakebold,tcolorbox,graphicx,ascmac,fancybox,framed,tikz,comment,calc,amsthm,bm,enumitem}"
+        "\\def\\mrm{\\mathrm}"
         "\\begin{document}",
         "",
         "\\end{document}",
