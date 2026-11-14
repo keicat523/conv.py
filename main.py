@@ -23,6 +23,48 @@ intents.message_content = True
 
 import logging
 
+
+rate_limit_logger = logging.getLogger("rate_limit")
+
+
+def log_rate_limit(error):
+    if not isinstance(error, discord.HTTPException):
+        return
+
+    if error.status != 429:
+        return
+
+    response = error.response
+    headers = getattr(response, "headers", {}) or {}
+
+    retry_after = headers.get("Retry-After", "不明")
+    scope = headers.get("X-RateLimit-Scope", "不明")
+    limit = headers.get("X-RateLimit-Limit", "不明")
+    remaining = headers.get("X-RateLimit-Remaining", "不明")
+    reset_after = headers.get("X-RateLimit-Reset-After", "不明")
+
+    rate_limit_logger.warning(
+        "\n"
+        "========== Discord API Rate Limit ==========\n"
+        "Status       : %s\n"
+        "Retry-After  : %s\n"
+        "Scope        : %s\n"
+        "Limit        : %s\n"
+        "Remaining    : %s\n"
+        "Reset-After  : %s\n"
+        "Error        : %s\n"
+        "============================================",
+        error.status,
+        retry_after,
+        scope,
+        limit,
+        remaining,
+        reset_after,
+        error,
+    )
+
+
+
 logging.basicConfig(level=logging.WARNING)
 
 # discord.pyの通常ログを抑制

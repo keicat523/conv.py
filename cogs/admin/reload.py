@@ -581,7 +581,7 @@ class Reload(commands.Cog):
                 failed,
             )
 
-            await ctx.reply(embed=embed)
+            await confirm.edit(content=None, embed=embed)
             return
 
         # フォルダ
@@ -596,7 +596,7 @@ class Reload(commands.Cog):
                 failed,
             )
 
-            await ctx.reply(embed=embed)
+            await confirm.edit(content=None, embed=embed)
             return
 
         # 個別Cog
@@ -608,7 +608,7 @@ class Reload(commands.Cog):
                 failed,
             )
 
-            await ctx.reply(embed=embed)
+            await confirm.edit(content=None, embed=embed)
             return
 
         # 全Cog再読み込みの確認
@@ -642,7 +642,7 @@ class Reload(commands.Cog):
             )
 
             await confirm.add_reaction(OK_EMOJI)
-            await ctx.reply(embed=embed)
+            await confirm.edit(content=None, embed=embed)
 
         except TimeoutError:
             await confirm.add_reaction(NG_EMOJI)
