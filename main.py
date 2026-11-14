@@ -264,20 +264,7 @@ class MyBot(commands.Bot):
                 module = rel_path.replace(os.sep, ".")[:-3]
                 await self.load_extension(module)
 
-        guild_id = getattr(config, "GUILD_ID", None)
-        print("[SYNC] スラッシュコマンド同期を開始")
-        if guild_id:
-            try:
-                guild_obj = discord.Object(id=int(guild_id))
-            except Exception:
-                guild_obj = None
-            if guild_obj is not None:
-                self.tree.copy_global_to(guild=guild_obj)
-                await self.tree.sync(guild=guild_obj)
-                return     
-        print("[SYNC] スラッシュコマンド同期が完了")
-
-        await self.tree.sync()
+        print("[SYNC] 起動時のスラッシュコマンド同期をスキップ")
 
 
 bot = MyBot(
