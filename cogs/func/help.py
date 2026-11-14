@@ -42,7 +42,10 @@ class HelpPageView(discord.ui.View):
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.author_id:
-            await interaction.response.send_message("このhelpはあなた専用です。", ephemeral=True)
+            await interaction.response.send_message(
+                "このhelpはあなた専用です。",
+                ephemeral=True,
+            )
             return False
         return True
 
@@ -106,7 +109,9 @@ class Help(commands.Cog):
         is_admin = user_id in admin_ids.ADMIN_IDS
         pages: list[Path] = []
         for path in self.page_files:
-            if _is_admin_page(path) and not is_admin:
+            if _is_admin_page(path) and (
+                not is_admin or not config.MENU_ADMIN_PAGES.get("help", False)
+            ):
                 continue
             pages.append(path)
         return pages
@@ -148,6 +153,7 @@ class Help(commands.Cog):
                     pass
 
     # Prefixコマンド: c!help
+        # Prefixコマンド: c!help
     @commands.command(name="help")
     async def help_prefix(self, ctx, command_name: str | None = None):
         if command_name is not None:
@@ -155,66 +161,23 @@ class Help(commands.Cog):
             if path is None or not path.exists():
                 await ctx.reply("そのコマンドのhelpは見つかりません。")
                 return
+
             await ctx.reply(embed=load_embed_from_json(str(path)))
             return
 
         self.page_files = self._scan_help_pages()
         pages = self._build_pages_for_user(ctx.author.id)
+
         if not pages:
             await ctx.reply("helpページが見つかりません。")
             return
 
-        index = 0
-
-        def make_embed():
-            embed = load_embed_from_json(str(pages[index]))
-            embed.set_footer(
-                text=f"Page {index + 1}/{len(pages)} ・ {FIRST_EMOJI} {PREV_EMOJI} {NEXT_EMOJI} {LAST_EMOJI} で移動"
-            )
-            return embed
-
-        msg = await ctx.reply(embed=make_embed())
-
-        if len(pages) <= 1:
+        if len(pages) == 1:
+            await ctx.reply(embed=load_embed_from_json(str(pages[0])))
             return
 
-        await msg.add_reaction(FIRST_EMOJI)
-        await msg.add_reaction(PREV_EMOJI)
-        await msg.add_reaction(NEXT_EMOJI)
-        await msg.add_reaction(LAST_EMOJI)
-
-        def check(reaction, user):
-            return (
-                user == ctx.author
-                and reaction.message.id == msg.id
-                and str(reaction.emoji) in (FIRST_EMOJI, PREV_EMOJI, NEXT_EMOJI, LAST_EMOJI)
-            )
-
-        while True:
-            try:
-                reaction, user = await self.bot.wait_for(
-                    "reaction_add",
-                    timeout=get_menu_timeout_seconds(),
-                    check=check,
-                )
-            except TimeoutError:
-                await self._clear_menu_reactions(msg)
-                break
-            except Exception:
-                break
-
-            await msg.remove_reaction(reaction, user)
-
-            if str(reaction.emoji) == FIRST_EMOJI:
-                index = 0
-            elif str(reaction.emoji) == LAST_EMOJI:
-                index = len(pages) - 1
-            elif str(reaction.emoji) == NEXT_EMOJI:
-                index = (index + 1) % len(pages)
-            else:
-                index = (index - 1) % len(pages)
-
-            await msg.edit(embed=make_embed())
+        view = HelpPageView(pages, ctx.author.id)
+        await ctx.reply(embed=view.get_embed(), view=view)
 
     @app_commands.command(
         name="help",

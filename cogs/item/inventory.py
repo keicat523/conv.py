@@ -6,6 +6,7 @@ from pathlib import Path
 
 import config
 from utils.timeout_manager import get_menu_timeout_seconds
+from utils.page_menu import PageMenuView
 from utils.inventory_manager import (
     get_inventory_with_names,
     load_rarity_map,
@@ -20,7 +21,7 @@ from utils.inventory_manager import (
 # =========================
 RARITY_EMOJI = config.RARITY_EMOJI
 MAX_ITEMS_PER_PAGE = 30
-MAX_CHARS_PER_PAGE = 2000
+MAX_CHARS_PER_PAGE = 1800
 
 # project_root 基準
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -99,6 +100,36 @@ class InventoryDetailView(discord.ui.View):
             embed=embed,
             ephemeral=True
         )
+
+
+class InventoryMenuView(PageMenuView):
+    def __init__(self, cog, user, page_data, embeds, index):
+        self.cog = cog
+        self.user = user
+        self.page_data = page_data
+        super().__init__(embeds, user.id)
+        self.index = index
+        self._set_detail_select(index)
+
+    def _set_detail_select(self, index):
+        if hasattr(self, "detail_select"):
+            self.remove_item(self.detail_select)
+        rarity, items, _rarity_page, _rarity_total = self.page_data[index]
+        if not items:
+            self.detail_select = None
+            return
+        detail_view = InventoryDetailView(self.user, rarity, items)
+        self.detail_select = detail_view.select
+        detail_view.remove_item(self.detail_select)
+        self.add_item(self.detail_select)
+
+    async def _show(self, interaction, index):
+        self.index = index % len(self.pages)
+        self._set_detail_select(self.index)
+        await interaction.response.edit_message(embed=self.pages[self.index], view=self)
+
+    async def interaction_check(self, interaction):
+        return await PageMenuView.interaction_check(self, interaction)
 
 
 # =========================
@@ -213,50 +244,12 @@ class Inventory(commands.Cog):
 
         rarity, items, rarity_page, rarity_total = pages[index]
         embed = self.build_embed(user, rarity, items, rarity_page, rarity_total, index + 1, total)
-        view = InventoryDetailView(user, rarity, items) if items else None
-
-        msg = await send_func(embed=embed, view=view)
-
-        if total <= 1:
-            return
-
-        await msg.add_reaction(config.FIRST_EMOJI)
-        await msg.add_reaction(config.PREV_EMOJI)
-        await msg.add_reaction(config.NEXT_EMOJI)
-        await msg.add_reaction(config.LAST_EMOJI)
-
-        def check(r, u):
-            return u == user and r.message.id == msg.id and str(r.emoji) in (
-                config.FIRST_EMOJI, config.PREV_EMOJI, config.NEXT_EMOJI, config.LAST_EMOJI
-            )
-
-        while True:
-            try:
-                reaction, u = await self.bot.wait_for(
-                    "reaction_add", timeout=get_menu_timeout_seconds(), check=check
-                )
-            except TimeoutError:
-                await self._clear_menu_reactions(msg)
-                break
-            except Exception:
-                break
-
-            await msg.remove_reaction(reaction, u)
-
-            if str(reaction.emoji) == config.FIRST_EMOJI:
-                index = 0
-            elif str(reaction.emoji) == config.LAST_EMOJI:
-                index = total - 1
-            elif str(reaction.emoji) == config.NEXT_EMOJI:
-                index = (index + 1) % total
-            else:
-                index = (index - 1) % total
-
-            rarity, items, rarity_page, rarity_total = pages[index]
-            embed = self.build_embed(user, rarity, items, rarity_page, rarity_total, index + 1, total)
-            view = InventoryDetailView(user, rarity, items) if items else None
-
-            await msg.edit(embed=embed, view=view)
+        embeds = [
+            self.build_embed(user, r, chunk, rp, rt, i + 1, total)
+            for i, (r, chunk, rp, rt) in enumerate(pages)
+        ]
+        view = InventoryMenuView(self, user, pages, embeds, index)
+        await send_func(embed=embeds[index], view=view)
 
         return
     @commands.command(name="inventory", aliases=["inv"])

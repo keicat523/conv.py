@@ -12,12 +12,13 @@ from utils.inventory_manager import (
     get_user_rarity_inputs
 )
 import config
+from utils.page_menu import PageMenuView
 
 # project_root
 BASE_DIR = Path(__file__).resolve().parents[2]
 ITEM_DATA_DIR = BASE_DIR / "data" / "item_data"
 MAX_ITEMS_PER_PAGE = 30
-MAX_CHARS_PER_PAGE = 2000
+MAX_CHARS_PER_PAGE = 1800
 
 "◀️"
 "▶️"
@@ -147,44 +148,11 @@ class ItemList(commands.Cog):
         rarity, items, rarity_page, rarity_total = pages[index]
         embed = self.build_item_list_embed(rarity, items, rarity_page, rarity_total, index + 1, total)
 
-        msg = await send_func(embed=embed)
-
-        if total <= 1:
-            return
-
-        await msg.add_reaction(config.FIRST_EMOJI)
-        await msg.add_reaction(config.PREV_EMOJI)
-        await msg.add_reaction(config.NEXT_EMOJI)
-        await msg.add_reaction(config.LAST_EMOJI)
-
-        def check(r, u):
-            return u == user and r.message.id == msg.id and str(r.emoji) in (
-                config.FIRST_EMOJI, config.PREV_EMOJI, config.NEXT_EMOJI, config.LAST_EMOJI
-            )
-
-        while True:
-            try:
-                reaction, u = await self.bot.wait_for(
-                    "reaction_add", timeout=60, check=check
-                )
-            except:
-                break
-
-            await msg.remove_reaction(reaction, u)
-
-            if str(reaction.emoji) == config.FIRST_EMOJI:
-                index = 0
-            elif str(reaction.emoji) == config.LAST_EMOJI:
-                index = total - 1
-            elif str(reaction.emoji) == config.NEXT_EMOJI:
-                index = (index + 1) % total
-            else:
-                index = (index - 1) % total
-
-            rarity, items, rarity_page, rarity_total = pages[index]
-            embed = self.build_item_list_embed(rarity, items, rarity_page, rarity_total, index + 1, total)
-
-            await msg.edit(embed=embed)
+        embeds = [self.build_item_list_embed(r, chunk, rp, rt, i + 1, total)
+                  for i, (r, chunk, rp, rt) in enumerate(pages)]
+        view = PageMenuView(embeds, user.id)
+        view.index = index
+        await send_func(embed=embeds[index], view=view)
     @commands.command(name="item_list")
     async def item_list(self, ctx, rarity: str | None = None):
         if not self.is_admin(ctx.author.id):

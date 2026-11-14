@@ -46,6 +46,14 @@ RARITY_EFF = {
     "l": ["legendary", "leg"]
 }
 
+# メニュー末尾に Admin 専用ページを追加するか
+MENU_ADMIN_PAGES = {
+    "help": True,
+    "inventory": False,
+    "search": False,
+    "item_list": False,
+}
+
 PREV_EMOJI = "◀️"
 NEXT_EMOJI = "▶️"
 FIRST_EMOJI = "⏮️"

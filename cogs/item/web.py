@@ -16,6 +16,7 @@ except ModuleNotFoundError:
 
 import config
 from utils.timeout_manager import get_menu_timeout_seconds
+from utils.page_menu import PageMenuView
 
 
 A4_HEIGHT_RATIO = math.sqrt(2)
@@ -25,7 +26,7 @@ MIN_SCREENSHOT_WIDTH = 720
 DISCORD_SAFE_FILE_LIMIT = 8 * 1024 * 1024
 MAX_FILES_PER_MESSAGE = 10
 SEARCH_RESULTS_PER_PAGE = 6
-SEARCH_DESCRIPTION_LIMIT = 2000
+SEARCH_DESCRIPTION_LIMIT = 1800
 SEARCH_RESULT_LIMIT = 30
 
 
@@ -760,59 +761,8 @@ class Web(commands.Cog):
 
         pages = self._build_search_pages(query, results)
         index = 0
-        msg = await ctx.reply(embed=pages[index])
-
-        if len(pages) <= 1:
-            return
-
-        for emoji in (
-            config.FIRST_EMOJI,
-            config.PREV_EMOJI,
-            config.NEXT_EMOJI,
-            config.LAST_EMOJI,
-        ):
-            await msg.add_reaction(emoji)
-
-        def check(reaction, user):
-            return (
-                user == ctx.author
-                and reaction.message.id == msg.id
-                and str(reaction.emoji) in {
-                    config.FIRST_EMOJI,
-                    config.PREV_EMOJI,
-                    config.NEXT_EMOJI,
-                    config.LAST_EMOJI,
-                }
-            )
-
-        while True:
-            try:
-                reaction, user = await self.bot.wait_for(
-                    "reaction_add",
-                    timeout=get_menu_timeout_seconds(),
-                    check=check,
-                )
-            except TimeoutError:
-                await self._clear_search_reactions(msg)
-                break
-            except Exception:
-                break
-
-            try:
-                await msg.remove_reaction(reaction, user)
-            except Exception:
-                pass
-
-            if str(reaction.emoji) == config.FIRST_EMOJI:
-                index = 0
-            elif str(reaction.emoji) == config.LAST_EMOJI:
-                index = len(pages) - 1
-            elif str(reaction.emoji) == config.NEXT_EMOJI:
-                index = (index + 1) % len(pages)
-            else:
-                index = (index - 1) % len(pages)
-
-            await msg.edit(embed=pages[index])
+        view = PageMenuView(pages, ctx.author.id)
+        await ctx.reply(embed=pages[index], view=view)
 
     @web.command(name="search")
     async def web_search(self, ctx: commands.Context, *terms: str):
@@ -845,59 +795,8 @@ class Web(commands.Cog):
 
         pages = self._build_search_pages(query, results)
         index = 0
-        msg = await interaction.followup.send(embed=pages[index], wait=True)
-
-        if len(pages) <= 1:
-            return
-
-        for emoji in (
-            config.FIRST_EMOJI,
-            config.PREV_EMOJI,
-            config.NEXT_EMOJI,
-            config.LAST_EMOJI,
-        ):
-            await msg.add_reaction(emoji)
-
-        def check(reaction, user):
-            return (
-                user == interaction.user
-                and reaction.message.id == msg.id
-                and str(reaction.emoji) in {
-                    config.FIRST_EMOJI,
-                    config.PREV_EMOJI,
-                    config.NEXT_EMOJI,
-                    config.LAST_EMOJI,
-                }
-            )
-
-        while True:
-            try:
-                reaction, user = await self.bot.wait_for(
-                    "reaction_add",
-                    timeout=get_menu_timeout_seconds(),
-                    check=check,
-                )
-            except TimeoutError:
-                await self._clear_search_reactions(msg)
-                break
-            except Exception:
-                break
-
-            try:
-                await msg.remove_reaction(reaction, user)
-            except Exception:
-                pass
-
-            if str(reaction.emoji) == config.FIRST_EMOJI:
-                index = 0
-            elif str(reaction.emoji) == config.LAST_EMOJI:
-                index = len(pages) - 1
-            elif str(reaction.emoji) == config.NEXT_EMOJI:
-                index = (index + 1) % len(pages)
-            else:
-                index = (index - 1) % len(pages)
-
-            await msg.edit(embed=pages[index])
+        view = PageMenuView(pages, interaction.user.id)
+        await interaction.followup.send(embed=pages[index], view=view)
 
     @web_slash.command(name="search", description="Google検索結果をEmbedメニューで表示します")
     @app_commands.describe(query="Googleで検索する語句")
