@@ -7,26 +7,6 @@ import re
 import sys
 import textwrap
 import traceback
-import logging
-
-# Discord API通信ログ
-discord_http_logger = logging.getLogger("discord.http")
-discord_http_logger.setLevel(logging.DEBUG)
-
-# 二重登録防止
-if not any(
-    getattr(handler, "_api_debug_handler", False)
-    for handler in discord_http_logger.handlers
-):
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.DEBUG)
-    handler._api_debug_handler = True
-
-    handler.setFormatter(logging.Formatter(
-        "[API LOG] %(asctime)s %(levelname)s %(message)s"
-    ))
-
-    discord_http_logger.addHandler(handler)
 
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

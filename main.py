@@ -15,9 +15,31 @@ from utils.timeout_manager import get_timeout_seconds
 from flask import Flask
 import threading
 
+
 # Bot基本設定 
 intents = discord.Intents.default()
 intents.message_content = True
+
+
+import logging
+
+# ↓ ここに追加
+class RateLimitFilter(logging.Filter):
+    def filter(self, record):
+        msg = record.getMessage().lower()
+        return any(x in msg for x in (
+            "rate limit",
+            "429",
+            "too many requests",
+            "retry-after",
+        ))
+
+logging.basicConfig(level=logging.WARNING)
+
+logger = logging.getLogger("discord.http")
+logger.setLevel(logging.DEBUG)
+logger.addFilter(RateLimitFilter())
+
 
 TOKEN = config.DISCORD_TOKEN
 if TOKEN is None:
@@ -216,6 +238,7 @@ class MyBot(commands.Bot):
                 await self.load_extension(module)
 
         guild_id = getattr(config, "GUILD_ID", None)
+        print("[SYNC] スラッシュコマンド同期を開始")
         if guild_id:
             try:
                 guild_obj = discord.Object(id=int(guild_id))
@@ -224,7 +247,8 @@ class MyBot(commands.Bot):
             if guild_obj is not None:
                 self.tree.copy_global_to(guild=guild_obj)
                 await self.tree.sync(guild=guild_obj)
-                return
+                return     
+        print("[SYNC] スラッシュコマンド同期が完了")
 
         await self.tree.sync()
 
