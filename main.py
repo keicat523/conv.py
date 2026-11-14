@@ -89,11 +89,18 @@ if not hasattr(config, "TIMEOUT_EXEMPT_COMMANDS"):
     print("設定: TIMEOUT_EXEMPT_COMMANDS が不足しています")
     raise RuntimeError("TIMEOUT_EXEMPT_COMMANDS が config.py に定義されていません")
 
-TIMEOUT_EXEMPT_COMMANDS = {
-    str(name).lower()
-    for name in config.TIMEOUT_EXEMPT_COMMANDS
-    if isinstance(name, str) and name
-}
+def is_timeout_exempt_command(command_name: str | None) -> bool:
+    if not command_name:
+        return False
+
+    exempt_commands = {
+        str(name).lower()
+        for name in getattr(config, "TIMEOUT_EXEMPT_COMMANDS", [])
+        if isinstance(name, str) and name
+    }
+
+    return command_name.lower() in exempt_commands
+
 
 
 def is_admin_user(user_id: int) -> bool:
@@ -116,10 +123,6 @@ def get_prefix(bot, message):
     return commands.when_mentioned_or(DEFAULT_PREFIX, user_prefix)(bot, message)
 
 
-def is_timeout_exempt_command(command_name: str | None) -> bool:
-    if command_name and command_name.lower() in {"execute", "exe"}:
-        return True
-    return bool(command_name) and command_name.lower() in TIMEOUT_EXEMPT_COMMANDS
 
 
 # mathコマンド用の入力整形
@@ -354,8 +357,17 @@ async def on_command_error(ctx, error):
 
     original = getattr(error, "original", error)
 
+    # Discord APIの429では追加メッセージを送信しない
+    if isinstance(original, discord.HTTPException) and original.status == 429:
+        log_rate_limit(original)
+        print("[RATE LIMIT] Discordへの追加通知を中止しました", flush=True)
+        return
+
     if isinstance(original, (asyncio.TimeoutError, asyncio.CancelledError)):
-        await safe_send_ctx(ctx, f"実行時間制限({get_timeout_seconds():g}秒)を超過しました")
+        await safe_send_ctx(
+            ctx,
+            f"実行時間制限({get_timeout_seconds():g}秒)を超過しました"
+        )
         return
 
     tb = "".join(
@@ -382,20 +394,39 @@ if __name__ == "__main__":
     while True:
         try:
             app = Flask(__name__)
+
             @app.route("/")
             def home():
                 return "Bot is running"
-            
+
             def run_web():
                 port = int(os.environ.get("PORT", 10000))
                 app.run(host="0.0.0.0", port=port)
-            
+
             threading.Thread(target=run_web, daemon=True).start()
-            
+
             bot.run(TOKEN)
             break
+
+        except discord.HTTPException as exc:
+            if exc.status == 429:
+                log_rate_limit(exc)
+                print(
+                    "[RATE LIMIT] 起動時の429を検出しました。"
+                    "再試行せずプロセスを終了します。",
+                    flush=True,
+                )
+                raise
+
+            raise
+
         except AttributeError as exc:
             if "'NoneType' object has no attribute 'sequence'" not in str(exc):
                 raise
-            print("Discord gateway returned an invalid startup response. Retrying in 5 seconds...")
+
+            print(
+                "Discord gateway returned an invalid startup response. "
+                "Retrying in 5 seconds...",
+                flush=True,
+            )
             time.sleep(5)
