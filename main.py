@@ -5,6 +5,7 @@ import traceback
 import discord
 from discord import app_commands
 from discord.ext import commands
+import utils.api_logger as api_logger
 
 import config
 from admin_ids import ADMIN_IDS
@@ -70,14 +71,9 @@ logging.basicConfig(level=logging.WARNING)
 # discord.pyの通常ログを抑制
 logging.getLogger("discord").setLevel(logging.WARNING)
 
-# HTTP通信のDEBUGログを有効化
+# HTTP DEBUGログは無効化
 logger = logging.getLogger("discord.http")
-logger.setLevel(logging.DEBUG)
-
-# 古いフィルターを削除
-for f in logger.filters[:]:
-    logger.removeFilter(f)
-
+logger.setLevel(logging.WARNING)
 
 TOKEN = config.DISCORD_TOKEN
 if TOKEN is None:
@@ -205,12 +201,26 @@ class TimeoutCommandTree(app_commands.CommandTree):
     async def _call(self, interaction: discord.Interaction):
         normalize_math_interaction_args(interaction)
 
-        command_name = interaction.command.name if interaction.command else None
-        if is_timeout_exempt_command(command_name):
-            return await super()._call(interaction)
+        command_name = (
+            f"/{interaction.command.qualified_name}"
+            if interaction.command else "SYSTEM"
+        )
+
+        if is_timeout_exempt_command(
+            command_name.removeprefix("/")
+        ):
+            return await api_logger.run_with_command_context(
+                command_name,
+                super()._call(interaction),
+            )
 
         timeout_seconds = get_timeout_seconds()
-        task = asyncio.create_task(super()._call(interaction))
+        task = asyncio.create_task(
+            api_logger.run_with_command_context(
+                command_name,
+                super()._call(interaction),
+            )
+        )
         done, _ = await asyncio.wait({task}, timeout=timeout_seconds)
         if task in done:
             return await task
@@ -235,12 +245,23 @@ class MyBot(commands.Bot):
     async def invoke(self, ctx: commands.Context):
         normalize_math_ctx_args(ctx)
 
-        command_name = ctx.command.name if ctx.command else None
-        if is_timeout_exempt_command(command_name):
-            return await super().invoke(ctx)
+        command_name = (
+            f"c!{ctx.command.qualified_name}"
+            if ctx.command else "SYSTEM"
+        )
 
+        if is_timeout_exempt_command(command_name.removeprefix("c!")):
+            return await api_logger.run_with_command_context(
+                command_name,
+                super().invoke(ctx),
+            )
         timeout_seconds = get_timeout_seconds()
-        task = asyncio.create_task(super().invoke(ctx))
+        task = asyncio.create_task(
+            api_logger.run_with_command_context(
+                command_name,
+                super().invoke(ctx),
+            )
+)
         done, _ = await asyncio.wait({task}, timeout=timeout_seconds)
         if task in done:
             return await task
@@ -285,7 +306,12 @@ class MyBot(commands.Bot):
             f"command={command.qualified_name}",
             flush=True
         )
-
+        
+    async def close(self):
+        try:
+            await api_logger.close()
+        finally:
+            await super().close()
 
     async def setup_hook(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -311,14 +337,13 @@ class MyBot(commands.Bot):
 
         print("[SYNC] 起動時のスラッシュコマンド同期をスキップ")
 
-
 bot = MyBot(
     command_prefix=get_prefix,
     intents=intents,
     help_command=None,
     tree_cls=TimeoutCommandTree,
+    http_trace=api_logger.create_trace_config(),
 )
-
 
 @bot.event
 async def on_ready():
