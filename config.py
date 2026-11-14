@@ -29,6 +29,7 @@ TIMEOUT_EXEMPT_COMMANDS = [
     "web",
     "open",
     "reload",
+    "sync",
     *MENU_TIMEOUT_EXEMPT_COMMANDS,
 ]
 
