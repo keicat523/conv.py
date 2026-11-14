@@ -215,6 +215,37 @@ class MyBot(commands.Bot):
         await safe_send_ctx(ctx, f"実行時間制限({timeout_seconds:g}秒)を超過しました")
         return
 
+    # 通常のコマンド（c!help など）
+    async def on_command(self, ctx):
+        user = ctx.author
+        guild = ctx.guild
+        channel = ctx.channel
+
+        print(
+            f"[COMMAND] "
+            f"user={user} (ID:{user.id}) | "
+            f"guild={guild.name if guild else 'DM'} | "
+            f"channel={channel} | "
+            f"command={ctx.command.qualified_name}",
+            flush=True
+        )
+
+    # スラッシュコマンド（/help など）
+    async def on_app_command_completion(self, interaction, command):
+        user = interaction.user
+        guild = interaction.guild
+        channel = interaction.channel
+
+        print(
+            f"[SLASH] "
+            f"user={user} (ID:{user.id}) | "
+            f"guild={guild.name if guild else 'DM'} | "
+            f"channel={channel} | "
+            f"command={command.qualified_name}",
+            flush=True
+        )
+
+
     async def setup_hook(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         cogs_dir = os.path.join(base_dir, "cogs")
