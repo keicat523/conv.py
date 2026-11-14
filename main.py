@@ -23,22 +23,18 @@ intents.message_content = True
 
 import logging
 
-# ↓ ここに追加
-class RateLimitFilter(logging.Filter):
-    def filter(self, record):
-        msg = record.getMessage().lower()
-        return any(x in msg for x in (
-            "rate limit",
-            "429",
-            "too many requests",
-            "retry-after",
-        ))
-
 logging.basicConfig(level=logging.WARNING)
 
+# discord.pyの通常ログを抑制
+logging.getLogger("discord").setLevel(logging.WARNING)
+
+# HTTP通信のDEBUGログを有効化
 logger = logging.getLogger("discord.http")
 logger.setLevel(logging.DEBUG)
-logger.addFilter(RateLimitFilter())
+
+# 古いフィルターを削除
+for f in logger.filters[:]:
+    logger.removeFilter(f)
 
 
 TOKEN = config.DISCORD_TOKEN
