@@ -71,6 +71,12 @@ def create_trace_config():
         ctx.method = params.method
         ctx.endpoint = str(params.url).split("?", 1)[0]
 
+        print(
+            f"[API LOGGER] Discord request: "
+            f"{ctx.method} {ctx.endpoint} | command={ctx.command}",
+            flush=True,
+        )
+
     async def on_request_end(session, ctx, params):
         response = params.response
         headers = response.headers
@@ -214,15 +220,32 @@ async def _writer():
 
                         if response.status < 300:
                             saved = True
+
+                            print(
+                                f"[API LOGGER] Supabase saved: "
+                                f"{len(batch)} records | HTTP {response.status}",
+                                flush=True,
+                            )
+
                             break
 
                         error_text = await response.text()
 
+                        print(
+                            f"[API LOGGER] Supabase error: "
+                            f"HTTP {response.status} | {error_text[:1000]}",
+                            flush=True,
+                        )
+
                         if response.status < 500:
                             break
 
-                except Exception:
-                    pass
+                except Exception as exc:
+                    print(
+                        f"[API LOGGER] Supabase connection error: "
+                        f"{type(exc).__name__}: {exc}",
+                        flush=True,
+                    )
 
                 if attempt < 2:
                     await asyncio.sleep(2 ** attempt)
